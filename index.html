@@ -36,6 +36,9 @@
   <!-- Canvas Confetti -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
+  <!-- QRCode.js for Instant Cross-Device Sync -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
   <!-- CSS -->
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -216,9 +219,17 @@
         </div>
       </form>
 
+      <!-- Sync Helper Tip -->
+      <div style="margin-top:16px; padding:12px; background:var(--primary-light); border:1px dashed var(--primary-color); border-radius:10px; font-size:0.84rem; text-align:center;">
+        <span style="font-weight:700; color:var(--primary-color);">📱 Conexão Instantânea com Celular</span>
+        <p style="margin-top:4px; font-size:0.78rem; color:var(--text-muted);">
+          Já cadastrou no computador? No computador, clique em <strong>"📱 Conectar Celular"</strong> e aponte a câmera para o QR Code para entrar no celular sem precisar redigitar!
+        </p>
+      </div>
+
       <div class="login-privacy-note">
         <i data-lucide="shield-check" style="color:var(--primary-color)"></i>
-        <span><strong>Ambiente Seguro:</strong> Seus dados são protegidos com criptografia e sincronização em nuvem.</span>
+        <span><strong>Ambiente Seguro:</strong> Seus dados são protegidos com sincronização automática entre celular e computador.</span>
       </div>
     </div>
   </div>
@@ -251,8 +262,8 @@
             <span class="cpf-badge" id="currentCpfBadge" title="CPF conectado">
               <i data-lucide="fingerprint" style="width:11px"></i> <span id="currentCpfText">000.000.000-00</span>
             </span>
-            <span class="sync-status-badge" id="syncStatusBadge" title="Status da sincronização em nuvem">
-              <span class="sync-dot"></span> <span id="syncStatusText">Nuvem Ativa</span>
+            <span class="sync-status-badge" id="syncStatusBadge" title="Status da sincronização">
+              <span class="sync-dot"></span> <span id="syncStatusText">Conectado</span>
             </span>
           </div>
 
@@ -270,6 +281,12 @@
       </div>
 
       <div class="header-actions">
+        <!-- Connect Phone Button (📱 Conectar Celular) -->
+        <button class="btn-connect-phone" onclick="app.openPhoneSyncModal()" title="Sincronizar com o Celular via QR Code ou WhatsApp">
+          <i data-lucide="smartphone"></i>
+          <span class="btn-text">Conectar Celular</span>
+        </button>
+
         <!-- Quick Income Button (💰 Lançar Receita) -->
         <button class="btn-add-income-quick" onclick="app.openNewIncomeModal()" title="Lançar Salário ou Receita">
           <i data-lucide="plus"></i>
@@ -693,6 +710,51 @@
 
   </main>
 
+  <!-- MODAL: MOBILE SYNC & QR CODE TRANSFER -->
+  <div id="phoneSyncModal" class="modal-overlay hidden">
+    <div class="modal-card" style="max-width: 480px; text-align: center;">
+      <div class="modal-header">
+        <h2><i data-lucide="smartphone" style="color:var(--primary-color)"></i> Conectar com o Celular</h2>
+        <button onclick="app.closeModal('phoneSyncModal')" class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:12px;">
+          Puxe todas as suas contas, login e dados do computador para o seu celular em 1 segundo:
+        </p>
+
+        <!-- QR Code Display Container -->
+        <div id="syncQrCodeBox" class="sync-qrcode-box"></div>
+
+        <ul class="sync-guide-steps">
+          <li>
+            <span class="sync-step-badge">1</span>
+            <span>Aponte a câmera do seu celular para este QR Code.</span>
+          </li>
+          <li>
+            <span class="sync-step-badge">2</span>
+            <span>Ou envie o link direto para o seu WhatsApp e abra no celular.</span>
+          </li>
+          <li>
+            <span class="sync-step-badge">3</span>
+            <span>O app abre no celular já com todas as contas sincronizadas!</span>
+          </li>
+        </ul>
+
+        <div style="display:flex; flex-direction:column; gap:10px; margin-top:16px;">
+          <button onclick="app.shareSyncLinkWhatsapp()" class="btn-whatsapp" style="width:100%; font-size:0.92rem; padding:12px;">
+            <i data-lucide="send"></i> Enviar Acesso para Meu WhatsApp
+          </button>
+          <button onclick="app.copySyncLink()" class="btn-secondary" style="width:100%; font-size:0.88rem;">
+            <i data-lucide="copy"></i> Copiar Link de Conexão
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content:center;">
+        <button onclick="app.closeModal('phoneSyncModal')" class="btn-primary" style="min-width:140px;">Pronto!</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: GASTO RÁPIDO DO DIA A DIA (EXPRESS) -->
   <div id="quickExpenseModal" class="modal-overlay hidden">
     <div class="modal-card" style="max-width: 460px;">
@@ -887,42 +949,6 @@
           <button type="submit" class="btn-primary"><i data-lucide="check"></i> Salvar Conta</button>
         </div>
       </form>
-    </div>
-  </div>
-
-  <!-- MODAL: CLOUD SYNC & CROSS-DEVICE EXPLANATION -->
-  <div id="cloudSyncModal" class="modal-overlay hidden">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h2><i data-lucide="cloud" style="color:var(--primary-color)"></i> Sincronização em Nuvem Multi-Dispositivos</h2>
-        <button onclick="app.closeModal('cloudSyncModal')" class="modal-close">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div class="privacy-modal-content">
-          <div class="privacy-highlight-box">
-            <h3>☁️ Acesse de Qualquer Lugar</h3>
-            <p>Seus dados são sincronizados automaticamente entre todos os seus dispositivos com total segurança!</p>
-          </div>
-
-          <ul class="privacy-list">
-            <li>
-              <strong>📱 No Celular e no Computador:</strong>
-              <p>Ao fazer login com seu **CPF e Senha** no celular ou computador, você terá acesso imediato a todas as suas contas atualizadas em tempo real.</p>
-            </li>
-            <li>
-              <strong>🔄 Sincronização Automática:</strong>
-              <p>Cada conta nova ou alteração feita em um aparelho reflete automaticamente nos outros.</p>
-            </li>
-            <li>
-              <strong>⚡ Funciona Também Offline:</strong>
-              <p>Se você ficar temporariamente sem internet, o aplicativo continua funcionando normalmente e sincroniza tudo assim que a conexão voltar.</p>
-            </li>
-          </ul>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button onclick="app.closeModal('cloudSyncModal')" class="btn-primary">Tudo Certo!</button>
-      </div>
     </div>
   </div>
 

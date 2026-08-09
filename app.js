@@ -1,6 +1,6 @@
 /* ==========================================================================
-   MINHAS CONTAS - BULLETPROOF DATA PRESERVATION & SYNC ENGINE
-   INCLUDES: ABA DE ENTRADAS & SALÁRIO + CORREÇÃO DEFINITIVA DE EXCLUSÃO
+   MINHAS CONTAS - BULLETPROOF DATA PRESERVATION & INSTANT CROSS-DEVICE ENGINE
+   INCLUDES: QR CODE & WHATSAPP SYNC (CELULAR <-> COMPUTADOR) + ABA DE ENTRADAS
    ========================================================================== */
 
 class AccountsApp {
@@ -23,9 +23,6 @@ class AccountsApp {
     this.deferredPrompt = null;
     this.categoryChart = null;
 
-    // Cloud Database Endpoint
-    this.cloudDbEndpoint = 'https://minhas-contas-sync-default-rtdb.firebaseio.com';
-
     // Filters for All Accounts Tab
     this.listFilters = {
       search: '',
@@ -42,11 +39,135 @@ class AccountsApp {
     this.initTheme();
     this.initPwa();
     this.populateReportSelectors();
-    this.checkCpfAuth();
+    
+    // Check if device opened with a Direct Sync Link / QR Code payload
+    const synced = this.checkUrlSyncPayload();
+    if (!synced) {
+      this.checkCpfAuth();
+    }
   }
 
   /* ------------------------------------------------------------------------
-     1. BULLETPROOF DATA PRESERVATION & RESTORE
+     1. INSTANT CROSS-DEVICE SYNC ENGINE (QR CODE / WHATSAPP / LINK)
+     ------------------------------------------------------------------------ */
+  generateSyncLink() {
+    if (!this.activeCpf || !this.activeUser) return window.location.href;
+
+    const payload = {
+      cpf: this.activeCpf,
+      user: this.activeUser,
+      profiles: this.profiles,
+      accounts: this.accounts,
+      budgetGoal: this.budgetGoal,
+      ts: Date.now()
+    };
+
+    const jsonStr = JSON.stringify(payload);
+    // Base64 UTF-8 safe encoding
+    const encoded = encodeURIComponent(btoa(unescape(encodeURIComponent(jsonStr))));
+    const baseUrl = window.location.origin + window.location.pathname;
+    return `${baseUrl}#authSync=${encoded}`;
+  }
+
+  checkUrlSyncPayload() {
+    try {
+      const hash = window.location.hash;
+      if (hash && hash.includes('authSync=')) {
+        const rawEncoded = hash.split('authSync=')[1].split('&')[0];
+        const jsonStr = decodeURIComponent(escape(atob(decodeURIComponent(rawEncoded))));
+        const data = JSON.parse(jsonStr);
+
+        if (data && data.cpf && data.user) {
+          const cleanCpf = data.cpf.replace(/\D/g, '');
+          this.activeCpf = cleanCpf;
+          this.activeUser = data.user;
+          this.saveLocalUserData(data.user);
+
+          if (Array.isArray(data.profiles) && data.profiles.length > 0) {
+            this.profiles = data.profiles;
+            this.saveCpfProfiles();
+          }
+
+          if (Array.isArray(data.accounts)) {
+            this.accounts = data.accounts;
+            this.saveCpfAccounts();
+          }
+
+          if (data.budgetGoal) {
+            this.budgetGoal = data.budgetGoal;
+            localStorage.setItem(this.getCpfStorageKey('budget_goal'), this.budgetGoal.toString());
+          }
+
+          localStorage.setItem(this.AUTH_CPF_KEY, cleanCpf);
+          
+          // Clean hash from address bar for beauty
+          try {
+            window.history.replaceState(null, null, window.location.pathname);
+          } catch(e) {}
+
+          this.loginSuccess(data.user, true);
+
+          if (window.confetti) {
+            confetti({ particleCount: 80, spread: 70, origin: { y: 0.7 } });
+          }
+          this.showToast(`🎉 Conectado ao celular com sucesso! Todas as suas contas foram sincronizadas.`);
+          return true;
+        }
+      }
+    } catch (err) {
+      console.log('Sync URL check: no payload found or invalid.', err);
+    }
+    return false;
+  }
+
+  openPhoneSyncModal() {
+    if (!this.activeCpf || !this.activeUser) {
+      alert('Faça login primeiro para gerar a sincronização com seu celular.');
+      return;
+    }
+
+    const qrContainer = document.getElementById('syncQrCodeBox');
+    if (qrContainer) {
+      qrContainer.innerHTML = '';
+      const syncUrl = this.generateSyncLink();
+
+      if (typeof QRCode !== 'undefined') {
+        new QRCode(qrContainer, {
+          text: syncUrl,
+          width: 200,
+          height: 200,
+          colorDark: "#0f172a",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } else {
+        qrContainer.innerHTML = `<p style="color:var(--text-muted); font-size:0.85rem;">Clique no botão abaixo para enviar o link para o seu WhatsApp!</p>`;
+      }
+    }
+
+    this.openModal('phoneSyncModal');
+  }
+
+  shareSyncLinkWhatsapp() {
+    const link = this.generateSyncLink();
+    let msg = `📲 *Minhas Contas - Acesso Direto*\n\n`;
+    msg += `Abra este link no seu celular para entrar com seu CPF e carregar todas as suas contas na hora:\n\n`;
+    msg += `${link}\n\n`;
+    msg += `🔒 _Acesso seguro pessoal & familiar._`;
+
+    const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank');
+  }
+
+  copySyncLink() {
+    const link = this.generateSyncLink();
+    navigator.clipboard.writeText(link).then(() => {
+      this.showToast('Link de conexão copiado! Cole no seu celular para abrir já conectado.');
+    });
+  }
+
+  /* ------------------------------------------------------------------------
+     2. EMERGENCY SCAN & RESTORE
      ------------------------------------------------------------------------ */
   emergencyScanAndRestore() {
     let recoveredAccounts = [];
@@ -72,9 +193,7 @@ class AccountsApp {
               }
             });
           }
-        } catch (e) {
-          // ignore
-        }
+        } catch (e) {}
       }
     }
 
@@ -91,14 +210,14 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     2. AUTH VIEWS & NAVIGATION
+     3. AUTH VIEWS & NAVIGATION
      ------------------------------------------------------------------------ */
   showLoginView() {
     document.getElementById('loginForm')?.classList.remove('hidden');
     document.getElementById('registerForm')?.classList.add('hidden');
     document.getElementById('forgotForm')?.classList.add('hidden');
     document.getElementById('authCardTitle').textContent = 'Minhas Contas';
-    document.getElementById('authCardTagline').textContent = 'Acesse suas finanças no celular ou computador com sincronização automática.';
+    document.getElementById('authCardTagline').textContent = 'Acesse suas finanças no celular ou computador com sincronização instantânea.';
     if (window.lucide) lucide.createIcons();
   }
 
@@ -140,7 +259,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     3. CLOUD SYNC & BULLETPROOF AUTH
+     4. BULLETPROOF AUTH & LOGIN
      ------------------------------------------------------------------------ */
   async checkCpfAuth() {
     const savedCpf = localStorage.getItem(this.AUTH_CPF_KEY);
@@ -168,69 +287,11 @@ class AccountsApp {
       this.saveLocalUserData(user);
     }
 
-    try {
-      const res = await fetch(`${this.cloudDbEndpoint}/users/${cleanCpf}.json`);
-      if (res.ok) {
-        const cloudData = await res.json();
-        if (cloudData && cloudData.user) {
-          user = cloudData.user;
-          this.saveLocalUserData(user);
-
-          // Only sync cloud accounts if local is brand new (null), NOT if user has deliberately deleted them!
-          const localAccsRaw = localStorage.getItem(`minhas_contas_cpf_${cleanCpf}_accounts`);
-          if (localAccsRaw === null && cloudData.accounts && Array.isArray(cloudData.accounts)) {
-            localStorage.setItem(`minhas_contas_cpf_${cleanCpf}_accounts`, JSON.stringify(cloudData.accounts));
-          }
-
-          const localProfsRaw = localStorage.getItem(`minhas_contas_cpf_${cleanCpf}_profiles`);
-          if (localProfsRaw === null && cloudData.profiles && Array.isArray(cloudData.profiles)) {
-            localStorage.setItem(`minhas_contas_cpf_${cleanCpf}_profiles`, JSON.stringify(cloudData.profiles));
-          }
-
-          if (cloudData.budgetGoal && localStorage.getItem(`minhas_contas_cpf_${cleanCpf}_budget_goal`) === null) {
-            localStorage.setItem(`minhas_contas_cpf_${cleanCpf}_budget_goal`, cloudData.budgetGoal.toString());
-          }
-        }
-      }
-    } catch (err) {
-      console.log('Cloud fetch offline, using local cache.');
-    }
-
     return user;
   }
 
   saveLocalUserData(user) {
     localStorage.setItem(`minhas_contas_user_${user.cpf}`, JSON.stringify(user));
-  }
-
-  async syncFullDataToCloud() {
-    if (!this.activeCpf) return;
-
-    this.updateSyncBadge('Sincronizando...');
-
-    const payload = {
-      user: this.activeUser,
-      profiles: this.profiles,
-      accounts: this.accounts,
-      budgetGoal: this.budgetGoal,
-      updatedAt: new Date().toISOString()
-    };
-
-    try {
-      await fetch(`${this.cloudDbEndpoint}/users/${this.activeCpf}.json`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      this.updateSyncBadge('Nuvem Ativa');
-    } catch (err) {
-      this.updateSyncBadge('Offline (Salvo Local)');
-    }
-  }
-
-  updateSyncBadge(text) {
-    const badgeText = document.getElementById('syncStatusText');
-    if (badgeText) badgeText.textContent = text;
   }
 
   async handleAuthLogin(e) {
@@ -257,7 +318,7 @@ class AccountsApp {
         user = { cpf: cleanCpf, name: 'Titular', phone: '', email: '', password: pass || '1234' };
         this.saveLocalUserData(user);
       } else {
-        if (confirm('Nenhum cadastro encontrado com este CPF. Deseja criar sua conta agora?')) {
+        if (confirm('Você já cadastrou no computador? Se sim, abra o app no computador e clique em "📱 Conectar Celular" para puxar todos os dados!\n\nCaso queira criar um cadastro novo neste aparelho agora, clique em OK.')) {
           this.showRegisterView();
         }
         if (btnSubmit) { btnSubmit.disabled = false; btnSubmit.innerHTML = '<i data-lucide="log-in"></i> Entrar no Aplicativo'; }
@@ -308,7 +369,7 @@ class AccountsApp {
     this.activeCpf = cleanCpf;
     this.activeUser = user;
 
-    // PRESERVE EXISTING ACCOUNTS (Never overwrite if key exists)
+    // PRESERVE EXISTING ACCOUNTS
     const existingRawAccounts = localStorage.getItem(`minhas_contas_cpf_${cleanCpf}_accounts`);
     if (existingRawAccounts !== null) {
       try { this.accounts = JSON.parse(existingRawAccounts); } catch(e) { this.accounts = []; }
@@ -326,7 +387,6 @@ class AccountsApp {
 
     this.saveCpfProfiles();
     this.saveCpfAccounts();
-    await this.syncFullDataToCloud();
 
     this.loginSuccess(user, true);
     this.showToast(`Conta ativada com sucesso! Bem-vindo(a), ${name}!`);
@@ -389,7 +449,6 @@ class AccountsApp {
     this.activeCpf = cleanCpf;
 
     this.loadCpfData();
-    await this.syncFullDataToCloud();
 
     this.loginSuccess(user, true);
     if (window.confetti) {
@@ -417,8 +476,6 @@ class AccountsApp {
     this.loadCpfData();
     this.render();
     this.showToast(`Conectado como ${user.name || this.formatCpf(user.cpf)}!`);
-
-    this.syncFullDataToCloud();
 
     if (window.lucide) {
       lucide.createIcons();
@@ -479,7 +536,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     4. GASTOS RÁPIDOS DO DIA A DIA (EXPRESS)
+     5. GASTOS RÁPIDOS DO DIA A DIA (EXPRESS)
      ------------------------------------------------------------------------ */
   openQuickExpenseModal(defaultTitle = '', defaultCat = 'Alimentação') {
     const amountInput = document.getElementById('quickAmount');
@@ -622,7 +679,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     5. DEDICATED TAB: ENTRADAS & SALÁRIO
+     6. DEDICATED TAB: ENTRADAS & SALÁRIO
      ------------------------------------------------------------------------ */
   renderIncomeTab() {
     const curYear = this.selectedDate.getFullYear();
@@ -715,7 +772,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     6. DATA STORAGE & PROFILES (WITH DEFINITIVE DELETION SUPPORT)
+     7. DATA STORAGE & PROFILES
      ------------------------------------------------------------------------ */
   getCpfStorageKey(subKey) {
     return `minhas_contas_cpf_${this.activeCpf}_${subKey}`;
@@ -745,7 +802,7 @@ class AccountsApp {
     const savedBudget = localStorage.getItem(this.getCpfStorageKey('budget_goal'));
     this.budgetGoal = savedBudget ? parseFloat(savedBudget) : 3000;
 
-    // Accounts: If key exists (even if empty []), USE IT!
+    // Accounts
     const rawAccounts = localStorage.getItem(this.getCpfStorageKey('accounts'));
     if (rawAccounts !== null) {
       try { 
@@ -754,7 +811,6 @@ class AccountsApp {
         this.accounts = []; 
       }
     } else {
-      // First time initialization for brand new CPF
       this.accounts = this.getSampleData();
       this.saveCpfAccounts();
     }
@@ -765,14 +821,12 @@ class AccountsApp {
   saveCpfProfiles() {
     if (!this.activeCpf) return;
     localStorage.setItem(this.getCpfStorageKey('profiles'), JSON.stringify(this.profiles));
-    this.syncFullDataToCloud();
   }
 
   saveCpfAccounts() {
     if (!this.activeCpf) return;
     localStorage.setItem(this.getCpfStorageKey('accounts'), JSON.stringify(this.accounts));
     this.rebuildPixMap();
-    this.syncFullDataToCloud();
   }
 
   rebuildPixMap() {
@@ -872,7 +926,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     7. PROFILE & MEMBER MANAGEMENT
+     8. PROFILE & MEMBER MANAGEMENT
      ------------------------------------------------------------------------ */
   switchUserProfile(profileId) {
     this.activeProfileId = profileId;
@@ -982,7 +1036,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     8. SMART BUDGET GOAL
+     9. SMART BUDGET GOAL
      ------------------------------------------------------------------------ */
   editBudgetGoalPrompt() {
     const current = this.budgetGoal;
@@ -990,14 +1044,13 @@ class AccountsApp {
     if (val && !isNaN(parseFloat(val))) {
       this.budgetGoal = parseFloat(val);
       localStorage.setItem(this.getCpfStorageKey('budget_goal'), this.budgetGoal.toString());
-      this.syncFullDataToCloud();
       this.renderDashboard();
       this.showToast(`Meta de gastos atualizada para ${this.formatCurrency(this.budgetGoal)}!`);
     }
   }
 
   /* ------------------------------------------------------------------------
-     9. THEME & PWA
+     10. THEME & PWA
      ------------------------------------------------------------------------ */
   initTheme() {
     const savedTheme = localStorage.getItem(this.THEME_KEY) || 'dark';
@@ -1055,7 +1108,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     10. NAVIGATION & RENDER PIPELINE
+     11. NAVIGATION & RENDER PIPELINE
      ------------------------------------------------------------------------ */
   switchTab(tabId) {
     this.currentTab = tabId;
@@ -1177,7 +1230,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     11. DASHBOARD RENDERER (INCLUDES SALÁRIO & ADIANTAMENTO PANEL)
+     12. DASHBOARD RENDERER (INCLUDES SALÁRIO & ADIANTAMENTO PANEL)
      ------------------------------------------------------------------------ */
   renderDashboard() {
     const curYear = this.selectedDate.getFullYear();
@@ -1472,7 +1525,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     12. LIST TAB RENDERER
+     13. LIST TAB RENDERER
      ------------------------------------------------------------------------ */
   renderList() {
     const search = document.getElementById('searchInput')?.value.toLowerCase() || '';
@@ -1609,7 +1662,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     13. REPORTS TAB ENGINE
+     14. REPORTS TAB ENGINE
      ------------------------------------------------------------------------ */
   populateReportSelectors() {
     const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
@@ -1814,8 +1867,14 @@ class AccountsApp {
         peopleMap[person] = { toPay: 0, toReceive: 0, count: 0, pixKey: a.pixKey || this.personPixMap[person] || '' };
       }
       peopleMap[person].count++;
-      if (a.type === 'pay' && a.status === 'pending') peopleMap[person].toPay += a.amount;
-      if (a.type === 'receive' && a.status === 'pending') peopleMap[person].toReceive += a.amount;
+      if (a.pixKey) peopleMap[person].pixKey = a.pixKey;
+
+      if (a.type === 'pay') {
+        if (a.status === 'pending') peopleMap[person].pendingPay += a.amount;
+        else personMap[p].paidPay += a.amount;
+      } else if (a.type === 'receive') {
+        if (a.status === 'pending') peopleMap[person].pendingReceive += a.amount;
+      }
     });
 
     let html = `
@@ -1934,7 +1993,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     14. CALENDAR TAB RENDERER
+     15. CALENDAR TAB RENDERER
      ------------------------------------------------------------------------ */
   renderCalendar() {
     const year = this.calendarDate.getFullYear();
@@ -2010,7 +2069,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     15. BY PERSON VIEW & CHAVE PIX REGISTRY
+     16. BY PERSON VIEW & CHAVE PIX REGISTRY
      ------------------------------------------------------------------------ */
   renderPeople() {
     const grid = document.getElementById('peopleCardsGrid');
@@ -2115,7 +2174,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     16. CRUD OPERATIONS (ADD / EDIT ACCOUNTS WITH PER-PARCEL LOGIC)
+     17. CRUD OPERATIONS (ADD / EDIT ACCOUNTS WITH PER-PARCEL LOGIC)
      ------------------------------------------------------------------------ */
   openNewModal() {
     document.getElementById('accId').value = '';
@@ -2200,7 +2259,6 @@ class AccountsApp {
       if (installmentLabel) installmentLabel.innerHTML = '<strong>Este valor será recebido em parcelas? (ex: 6x de R$ 50)</strong>';
       if (amountLabel) amountLabel.textContent = isInstallment ? 'Valor de CADA Parcela a Receber (R$) *' : 'Valor a Receber (R$) *';
 
-      // Tailor category options for income
       if (catSelect) {
         catSelect.innerHTML = `
           <option value="Salário / Pagamento">💼 Salário / Pagamento Principal</option>
@@ -2218,7 +2276,6 @@ class AccountsApp {
       if (installmentLabel) installmentLabel.innerHTML = '<strong>Esta compra é parcelada? (ex: 6x de R$ 50)</strong>';
       if (amountLabel) amountLabel.textContent = isInstallment ? 'Valor de CADA Parcela (R$) *' : 'Valor da Conta (R$) *';
 
-      // Tailor category options for expense
       if (catSelect) {
         catSelect.innerHTML = `
           <option value="Cartão de Terceiros">💳 Cartão de Terceiros</option>
@@ -2356,7 +2413,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     17. WHATSAPP MESSAGE GENERATOR & REPORTS
+     18. WHATSAPP MESSAGE GENERATOR & REPORTS
      ------------------------------------------------------------------------ */
   openWhatsappModal(id) {
     const acc = this.accounts.find(a => a.id === id);
@@ -2400,7 +2457,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     18. BACKUP & RESTORE JSON
+     19. BACKUP & RESTORE JSON
      ------------------------------------------------------------------------ */
   exportDataJSON() {
     const exportPayload = {
@@ -2451,10 +2508,9 @@ class AccountsApp {
         }
 
         this.saveCpfAccounts();
-        await this.syncFullDataToCloud();
         this.render();
         this.closeModal('backupModal');
-        alert('Backup importado e sincronizado com sucesso!');
+        alert('Backup importado com sucesso!');
       } catch (err) {
         alert('Erro ao ler arquivo de backup.');
       }
@@ -2463,7 +2519,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     19. UTILS & TOASTS
+     20. UTILS & TOASTS
      ------------------------------------------------------------------------ */
   openModal(modalId) {
     if (modalId === 'membersModal') {

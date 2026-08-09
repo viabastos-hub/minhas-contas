@@ -2074,6 +2074,80 @@ button, input, select, textarea {
 }
 
 /* ==========================================================================
+   MOBILE QR SYNC & CROSS-DEVICE CONNECTION
+   ========================================================================== */
+.btn-connect-phone {
+  background: linear-gradient(135deg, #0284c7, #2563eb);
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  font-size: 0.86rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  transition: var(--transition);
+}
+
+.btn-connect-phone:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.45);
+}
+
+.sync-qrcode-box {
+  background: #ffffff;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 16px auto;
+  width: fit-content;
+  box-shadow: var(--shadow-md);
+}
+
+.sync-qrcode-box img,
+.sync-qrcode-box canvas {
+  display: block;
+}
+
+.sync-guide-steps {
+  list-style: none;
+  margin: 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sync-guide-steps li {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sync-step-badge {
+  background: var(--primary-color);
+  color: #ffffff;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
    PRINT STYLES FOR REPORTS (PDF EXPORT)
    ========================================================================== */
 @media print {
@@ -2089,6 +2163,7 @@ button, input, select, textarea {
   .icon-btn,
   .btn-add,
   .btn-quick-expense,
+  .btn-connect-phone,
   .quick-shortcuts-panel,
   .income-milestones-section,
   .reports-header-panel,
@@ -2133,4 +2208,5 @@ button, input, select, textarea {
   .box-val.expense { color: #e11d48 !important; }
   .box-val.balance { color: #2563eb !important; }
 }
+
 
