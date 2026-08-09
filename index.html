@@ -28,119 +28,195 @@
   <!-- Canvas Confetti for payment celebrations -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
+  <!-- Firebase SDKs for Real-Time Cross-Device Cloud Sync -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
   <!-- CSS -->
   <link rel="stylesheet" href="styles.css">
 </head>
-<body class="not-logged-in">
+<body>
 
-  <!-- Screen Lock PIN Overlay -->
-  <div id="pinOverlay" class="pin-overlay hidden">
-    <div class="pin-card">
-      <div class="pin-icon"><i data-lucide="lock"></i></div>
-      <h2>Aplicativo Bloqueado</h2>
-      <p>Digite seu PIN de 4 dígitos para acessar</p>
-      <div class="pin-dots">
-        <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+  <!-- =========================================================================
+       AUTH OVERLAY (LOGIN, CADASTRO, ESQUECI A SENHA)
+       ========================================================================= -->
+  <div id="authOverlay" class="cpf-login-overlay">
+    <div class="cpf-login-card">
+      <div class="login-brand-logo">
+        <i data-lucide="wallet"></i>
       </div>
-      <div class="pin-pad">
-        <button onclick="app.enterPin('1')">1</button>
-        <button onclick="app.enterPin('2')">2</button>
-        <button onclick="app.enterPin('3')">3</button>
-        <button onclick="app.enterPin('4')">4</button>
-        <button onclick="app.enterPin('5')">5</button>
-        <button onclick="app.enterPin('6')">6</button>
-        <button onclick="app.enterPin('7')">7</button>
-        <button onclick="app.enterPin('8')">8</button>
-        <button onclick="app.enterPin('9')">9</button>
-        <button onclick="app.clearPin()" class="btn-subtle"><i data-lucide="delete"></i></button>
-        <button onclick="app.enterPin('0')">0</button>
-        <button onclick="app.checkPin()" class="btn-primary-sm"><i data-lucide="check"></i></button>
+      <h2 id="authCardTitle">Minhas Contas</h2>
+      <p class="login-tagline" id="authCardTagline">Acesse suas finanças no celular ou computador com sincronização automática.</p>
+
+      <!-- 1. LOGIN FORM -->
+      <form id="loginForm" onsubmit="app.handleAuthLogin(event)" class="login-form">
+        <div class="form-group">
+          <label for="loginCpfInput"><i data-lucide="fingerprint"></i> Digite seu CPF:</label>
+          <input 
+            type="text" 
+            id="loginCpfInput" 
+            placeholder="000.000.000-00" 
+            maxlength="14" 
+            required 
+            autocomplete="off" 
+            oninput="app.maskCpf(this)"
+          >
+        </div>
+
+        <div class="form-group">
+          <div class="label-row-split">
+            <label for="loginPassInput"><i data-lucide="lock"></i> Digite sua Senha:</label>
+            <a href="javascript:void(0)" onclick="app.showForgotPassView()" class="forgot-link">Esqueci a senha</a>
+          </div>
+          <div class="password-input-wrapper">
+            <input 
+              type="password" 
+              id="loginPassInput" 
+              placeholder="Sua senha" 
+              required
+            >
+            <button type="button" class="btn-toggle-eye" onclick="app.togglePasswordVisibility('loginPassInput', this)">
+              <i data-lucide="eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="remember-row">
+          <input type="checkbox" id="rememberAuthCheck" checked>
+          <label for="rememberAuthCheck">Manter conectado neste aparelho</label>
+        </div>
+
+        <button type="submit" class="btn-primary btn-block" id="btnLoginSubmit">
+          <i data-lucide="log-in"></i> Entrar no Aplicativo
+        </button>
+
+        <div class="auth-switch-text">
+          Não tem conta ainda? <a href="javascript:void(0)" onclick="app.showRegisterView()">Criar conta gratuita</a>
+        </div>
+      </form>
+
+      <!-- 2. REGISTER FORM -->
+      <form id="registerForm" onsubmit="app.handleAuthRegister(event)" class="login-form hidden">
+        <div class="form-group">
+          <label for="regCpfInput"><i data-lucide="fingerprint"></i> Seu CPF *</label>
+          <input 
+            type="text" 
+            id="regCpfInput" 
+            placeholder="000.000.000-00" 
+            maxlength="14" 
+            required 
+            oninput="app.maskCpf(this)"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="regNameInput"><i data-lucide="user"></i> Seu Nome Completo / Titular *</label>
+          <input type="text" id="regNameInput" placeholder="Ex: Vivian Silva" required>
+        </div>
+
+        <div class="form-group">
+          <label for="regPhoneInput"><i data-lucide="phone"></i> Celular / WhatsApp (com DDD) *</label>
+          <input 
+            type="text" 
+            id="regPhoneInput" 
+            placeholder="(11) 99999-8888" 
+            maxlength="15" 
+            required 
+            oninput="app.maskPhone(this)"
+          >
+          <small class="help-text">Usado para receber sua senha caso esqueça.</small>
+        </div>
+
+        <div class="form-group">
+          <label for="regEmailInput"><i data-lucide="mail"></i> Seu E-mail *</label>
+          <input type="email" id="regEmailInput" placeholder="seuemail@exemplo.com" required>
+          <small class="help-text">Também usado para recuperação de senha.</small>
+        </div>
+
+        <div class="form-group">
+          <label for="regPassInput"><i data-lucide="lock"></i> Crie uma Senha *</label>
+          <div class="password-input-wrapper">
+            <input type="password" id="regPassInput" placeholder="Mínimo 4 dígitos" required minlength="4">
+            <button type="button" class="btn-toggle-eye" onclick="app.togglePasswordVisibility('regPassInput', this)">
+              <i data-lucide="eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary btn-block" id="btnRegisterSubmit">
+          <i data-lucide="user-check"></i> Concluir Cadastro e Entrar
+        </button>
+
+        <div class="auth-switch-text">
+          Já tem conta? <a href="javascript:void(0)" onclick="app.showLoginView()">Fazer login</a>
+        </div>
+      </form>
+
+      <!-- 3. FORGOT PASSWORD FORM -->
+      <div id="forgotForm" class="login-form hidden">
+        <div class="form-group">
+          <label for="forgotCpfInput"><i data-lucide="fingerprint"></i> Digite o seu CPF cadastrado:</label>
+          <input 
+            type="text" 
+            id="forgotCpfInput" 
+            placeholder="000.000.000-00" 
+            maxlength="14" 
+            required 
+            oninput="app.maskCpf(this)"
+          >
+        </div>
+
+        <p style="font-size:0.85rem; color:var(--text-muted); margin:4px 0 10px;">
+          Escolha como deseja receber ou redefinir sua senha:
+        </p>
+
+        <div class="recovery-buttons-stack">
+          <button type="button" onclick="app.recoverPasswordViaWhatsApp()" class="btn-whatsapp btn-block">
+            <i data-lucide="message-square"></i> Enviar Senha no WhatsApp
+          </button>
+
+          <button type="button" onclick="app.recoverPasswordViaEmail()" class="btn-secondary btn-block">
+            <i data-lucide="mail"></i> Enviar Senha no E-mail
+          </button>
+
+          <button type="button" onclick="app.showResetPasswordDirect()" class="btn-subtle btn-block" style="font-size:0.88rem;">
+            <i data-lucide="key-round"></i> Redefinir Senha Diretamente
+          </button>
+        </div>
+
+        <div class="auth-switch-text" style="margin-top:16px;">
+          Lembrou a senha? <a href="javascript:void(0)" onclick="app.showLoginView()">Voltar para o Login</a>
+        </div>
+      </div>
+
+      <!-- 4. DIRECT RESET PASSWORD FORM -->
+      <form id="resetPassForm" onsubmit="app.handleResetPasswordSubmit(event)" class="login-form hidden">
+        <div class="form-group">
+          <label for="resetNewPass"><i data-lucide="lock"></i> Digite sua Nova Senha:</label>
+          <input type="password" id="resetNewPass" placeholder="Nova senha" required minlength="4">
+        </div>
+        <div class="form-group">
+          <label for="resetConfirmPass"><i data-lucide="check"></i> Confirme a Nova Senha:</label>
+          <input type="password" id="resetConfirmPass" placeholder="Confirme a nova senha" required minlength="4">
+        </div>
+
+        <button type="submit" class="btn-primary btn-block">
+          <i data-lucide="check-circle"></i> Salvar Nova Senha e Entrar
+        </button>
+
+        <div class="auth-switch-text">
+          <a href="javascript:void(0)" onclick="app.showLoginView()">Cancelar</a>
+        </div>
+      </form>
+
+      <div class="login-privacy-note">
+        <i data-lucide="cloud-check" style="color:var(--primary-color)"></i>
+        <span><strong>Sincronização em Nuvem:</strong> Seus dados sincronizam automaticamente entre qualquer celular e computador via CPF e senha.</span>
       </div>
     </div>
   </div>
 
-  <!-- WELCOME LANDING & LOGIN / REGISTRATION OVERLAY -->
-  <div id="authOverlay" class="auth-overlay">
-    <div class="auth-card">
-      <div class="auth-header">
-        <div class="auth-logo"><i data-lucide="wallet"></i></div>
-        <h2>Minhas Contas</h2>
-        <p class="auth-subtitle">Seu Controle Financeiro Pessoal, Simples e Privado</p>
-      </div>
-
-      <!-- Explanation & Instructions -->
-      <div class="auth-explanation">
-        <h3>💡 O que é este aplicativo?</h3>
-        <p>Um gerenciador financeiro completo e gratuito para você organizar suas contas a pagar, valores a receber, compras parceladas e guardar suas chaves Pix com privacidade.</p>
-
-        <div class="auth-steps-grid">
-          <div class="auth-step">
-            <span class="step-num">1</span>
-            <strong>Crie sua Conta</strong>
-            <p>Cadastre-se para ter seu espaço exclusivo e 100% privado.</p>
-          </div>
-          <div class="auth-step">
-            <span class="step-num">2</span>
-            <strong>Cadastre Contas</strong>
-            <p>Adicione boletos, cartões e contas a receber facilmente.</p>
-          </div>
-          <div class="auth-step">
-            <span class="step-num">3</span>
-            <strong>Seus Dados Seguros</strong>
-            <p>Suas informações ficam salvas apenas no seu próprio celular/dispositivo.</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Auth Tabs: Login vs Register -->
-      <div class="auth-tabs">
-        <button id="tabBtnLogin" class="auth-tab-btn active" onclick="app.switchAuthTab('login')">
-          <i data-lucide="log-in"></i> Entrar
-        </button>
-        <button id="tabBtnRegister" class="auth-tab-btn" onclick="app.switchAuthTab('register')">
-          <i data-lucide="user-plus"></i> Criar Conta Grátis
-        </button>
-      </div>
-
-      <!-- Form 1: Login -->
-      <form id="loginForm" class="auth-form" onsubmit="app.handleLogin(event)">
-        <div class="form-group">
-          <label for="loginUsername"><i data-lucide="user"></i> Usuário ou E-mail</label>
-          <input type="text" id="loginUsername" placeholder="Digite seu usuário ou e-mail" required>
-        </div>
-        <div class="form-group">
-          <label for="loginPassword"><i data-lucide="lock"></i> Senha</label>
-          <input type="password" id="loginPassword" placeholder="Digite sua senha" required>
-        </div>
-        <button type="submit" class="btn-primary btn-block"><i data-lucide="log-in"></i> Entrar no Meu Aplicativo</button>
-      </form>
-
-      <!-- Form 2: Register -->
-      <form id="registerForm" class="auth-form hidden" onsubmit="app.handleRegister(event)">
-        <div class="form-group">
-          <label for="regName"><i data-lucide="user"></i> Seu Nome Completo</label>
-          <input type="text" id="regName" placeholder="Ex: Maria Silva" required>
-        </div>
-        <div class="form-group">
-          <label for="regUsername"><i data-lucide="at-sign"></i> Usuário ou E-mail para Login</label>
-          <input type="text" id="regUsername" placeholder="Ex: maria@email.com ou maria123" required>
-        </div>
-        <div class="form-group">
-          <label for="regPassword"><i data-lucide="lock"></i> Crie uma Senha</label>
-          <input type="password" id="regPassword" placeholder="Sua senha de acesso" required minlength="3">
-        </div>
-        <button type="submit" class="btn-primary btn-block"><i data-lucide="user-plus"></i> Criar Minha Conta Grátis</button>
-      </form>
-
-      <div class="auth-footer">
-        <button type="button" onclick="app.handleGuestAccess()" class="btn-link-guest">
-          <i data-lucide="sparkles"></i> Testar sem cadastro (Modo Convidado)
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- PWA Install Banner (Android) -->
+  <!-- PWA Install Banner -->
   <div id="installBanner" class="install-banner hidden">
     <div class="banner-content">
       <span class="banner-icon">📱</span>
@@ -155,20 +231,6 @@
     </div>
   </div>
 
-  <!-- PWA Install Banner (iOS / iPhone Special Popup) -->
-  <div id="iosInstallBanner" class="install-banner ios-banner hidden">
-    <div class="banner-content">
-      <span class="banner-icon">📲</span>
-      <div>
-        <strong>Instalar no iPhone</strong>
-        <p>Toque em <strong>Compartilhar <i data-lucide="share" style="width:12px; height:12px; display:inline"></i></strong> e selecione <strong>"Adicionar à Tela de Início"</strong>!</p>
-      </div>
-    </div>
-    <div class="banner-actions">
-      <button onclick="document.getElementById('iosInstallBanner').classList.add('hidden')" class="btn-dismiss">&times;</button>
-    </div>
-  </div>
-
   <!-- App Header -->
   <header class="app-header">
     <div class="header-container">
@@ -177,17 +239,33 @@
           <i data-lucide="wallet"></i>
         </div>
         <div>
-          <h1>Minhas Contas</h1>
-          <div class="user-session-badge" id="userSessionBadge">
-            <span id="currentUserNameDisplay">👤 Usuário</span>
+          <div class="brand-title-row">
+            <h1>Minhas Contas</h1>
+            <span class="cpf-badge" id="currentCpfBadge" title="CPF conectado">
+              <i data-lucide="fingerprint" style="width:11px"></i> <span id="currentCpfText">000.000.000-00</span>
+            </span>
+            <span class="sync-status-badge" id="syncStatusBadge" title="Status da sincronização em nuvem">
+              <span class="sync-dot"></span> <span id="syncStatusText">Nuvem Ativa</span>
+            </span>
+          </div>
+
+          <!-- Multi-Profile / Multi-Member Switcher (e.g. Vivian, Esposa, Esposo, Família) -->
+          <div class="profile-switcher">
+            <i data-lucide="users" style="width:14px; height:14px; color:var(--primary-color)"></i>
+            <select id="userProfileSelect" onchange="app.switchUserProfile(this.value)">
+              <!-- Rendered dynamically by JS -->
+            </select>
+            <button onclick="app.openModal('membersModal')" class="btn-add-profile" title="Gerenciar Usuários e Membros">
+              <i data-lucide="user-plus" style="width:11px"></i> Gerenciar
+            </button>
           </div>
         </div>
       </div>
 
       <div class="header-actions">
-        <!-- Clear Demo Data Button -->
-        <button class="btn-clear-demo" onclick="app.clearDemoAccountsPrompt()" title="Apagar contas de teste e colocar minhas contas reais">
-          <i data-lucide="sparkles"></i> <span>Zerar Contas</span>
+        <!-- Cloud Sync Info Modal Button -->
+        <button class="icon-btn" onclick="app.openModal('cloudSyncModal')" title="Sincronização em Nuvem & Dispositivos">
+          <i data-lucide="cloud"></i>
         </button>
 
         <!-- Theme Toggle -->
@@ -195,19 +273,14 @@
           <i data-lucide="sun" id="themeIcon"></i>
         </button>
 
-        <!-- Lock PIN Toggle -->
-        <button class="icon-btn" onclick="app.togglePinLock()" id="pinToggleBtn" title="Bloquear com PIN">
-          <i data-lucide="lock"></i>
-        </button>
-
         <!-- Backup/Restore -->
         <button class="icon-btn" onclick="app.openModal('backupModal')" title="Backup & Compartilhar">
           <i data-lucide="download-cloud"></i>
         </button>
 
-        <!-- Prominent Logout Button -->
-        <button class="btn-danger-logout" onclick="app.logoutUser()" title="Sair da Conta">
-          <i data-lucide="log-out"></i> <span>Sair</span>
+        <!-- Logout / Switch CPF Button -->
+        <button class="icon-btn" onclick="app.logoutCpf()" title="Trocar CPF / Sair" style="color:var(--text-muted)">
+          <i data-lucide="log-out"></i>
         </button>
 
         <!-- Add Transaction Button -->
@@ -228,6 +301,10 @@
     <button class="nav-tab" data-tab="list" onclick="app.switchTab('list')">
       <i data-lucide="list-todo"></i>
       <span>Todas as Contas</span>
+    </button>
+    <button class="nav-tab" data-tab="reports" onclick="app.switchTab('reports')">
+      <i data-lucide="file-bar-chart"></i>
+      <span>Relatórios</span>
     </button>
     <button class="nav-tab" data-tab="calendar" onclick="app.switchTab('calendar')">
       <i data-lucide="calendar"></i>
@@ -271,6 +348,25 @@
         <button class="btn-alert-action" onclick="app.filterByStatus('vencidas')">Ver Contas Atrasadas</button>
       </div>
 
+      <!-- SMART MONTHLY BUDGET / GOAL PROGRESS BAR -->
+      <div class="budget-goal-card" id="budgetGoalCard">
+        <div class="budget-header">
+          <div class="budget-title">
+            <i data-lucide="target" style="color:var(--primary-color)"></i>
+            <span>Meta de Gastos do Mês: <strong id="budgetAmountDisplay">R$ 0,00</strong></span>
+            <button onclick="app.editBudgetGoalPrompt()" class="btn-icon-inline" title="Alterar meta de gastos"><i data-lucide="pencil" style="width:13px"></i></button>
+          </div>
+          <span class="budget-status-text" id="budgetStatusText">0% do limite</span>
+        </div>
+        <div class="budget-progress-track">
+          <div class="budget-progress-bar" id="budgetProgressBar" style="width: 0%;"></div>
+        </div>
+        <div class="budget-sub-info">
+          <span id="budgetSpentInfo">Gasto total: R$ 0,00</span>
+          <span id="budgetRemainingInfo">Restante: R$ 0,00</span>
+        </div>
+      </div>
+
       <!-- KPI Summary Cards -->
       <div class="kpi-grid">
         <!-- Total A Pagar -->
@@ -311,6 +407,14 @@
           </div>
           <div class="kpi-value" id="kpiAlreadyPaid">R$ 0,00</div>
           <div class="kpi-subtext" id="kpiAlreadyPaidSub">Contas quitadas</div>
+        </div>
+      </div>
+
+      <!-- FAMILY MEMBERS BALANCE SUMMARY (When in 'all' view) -->
+      <div id="familyMembersSummary" class="family-members-summary hidden">
+        <h3><i data-lucide="users"></i> Balanço por Membro da Família no Mês</h3>
+        <div id="familyMembersGrid" class="family-members-grid">
+          <!-- Rendered dynamically by JS -->
         </div>
       </div>
 
@@ -376,28 +480,6 @@
         </div>
       </div>
 
-      <!-- Batch Actions Bar (for multi-selecting and deleting multiple accounts) -->
-      <div id="batchActionBar" class="batch-action-bar hidden">
-        <div class="batch-info">
-          <label class="batch-select-all">
-            <input type="checkbox" id="selectAllCheckbox" onchange="app.toggleSelectAll(this.checked)">
-            <span><strong>Selecionar Todas</strong></span>
-          </label>
-          <span id="selectedCountText" class="selected-count-badge">0 selecionadas</span>
-        </div>
-        <div class="batch-buttons">
-          <button type="button" class="btn-batch-paid" onclick="app.markSelectedAsPaid()">
-            <i data-lucide="check-circle-2"></i> Concluir Selecionadas
-          </button>
-          <button type="button" class="btn-batch-delete" onclick="app.deleteSelectedAccounts()">
-            <i data-lucide="trash-2"></i> Apagar Selecionadas
-          </button>
-          <button type="button" class="btn-batch-cancel" onclick="app.clearSelection()">
-            &times; Limpar Seleção
-          </button>
-        </div>
-      </div>
-
       <!-- Quick Action Total Summary for current filter -->
       <div class="list-summary-bar">
         <span>Mostrando <strong id="filteredCount">0</strong> contas</span>
@@ -413,7 +495,57 @@
       </div>
     </section>
 
-    <!-- TAB 3: CALENDAR VIEW -->
+    <!-- TAB 3: RELATÓRIOS (MENSAL E POR GASTOS/CATEGORIAS) -->
+    <section id="tab-reports" class="tab-content">
+      <div class="reports-header-panel">
+        <div class="reports-header-info">
+          <h2><i data-lucide="file-bar-chart"></i> Relatórios Financeiros</h2>
+          <p>Gere extratos detalhados mensais, por categorias de gastos ou por pessoa para impressão e PDF.</p>
+        </div>
+        <div class="reports-actions-bar">
+          <button onclick="app.shareReportWhatsapp()" class="btn-whatsapp" title="Enviar resumo no WhatsApp">
+            <i data-lucide="send"></i> Compartilhar no WhatsApp
+          </button>
+          <button onclick="app.printCurrentReport()" class="btn-primary">
+            <i data-lucide="printer"></i> Imprimir / Salvar PDF
+          </button>
+        </div>
+      </div>
+
+      <!-- Report Config Toolbar -->
+      <div class="report-toolbar">
+        <div class="toolbar-item">
+          <label><i data-lucide="layers"></i> Tipo de Relatório:</label>
+          <select id="reportTypeSelect" onchange="app.renderReportsTab()">
+            <option value="monthly">📅 Relatório Mensal Completo (Receitas vs Despesas)</option>
+            <option value="category">🛒 Relatório Detalhado por Gastos / Categorias</option>
+            <option value="people">👥 Relatório por Pessoa / Cartão de Terceiros</option>
+            <option value="annual">📈 Relatório Anual Consolidado</option>
+          </select>
+        </div>
+
+        <div class="toolbar-item" id="reportMonthSelectorWrapper">
+          <label><i data-lucide="calendar"></i> Mês de Referência:</label>
+          <select id="reportMonthSelect" onchange="app.renderReportsTab()">
+            <!-- Generated by JS -->
+          </select>
+        </div>
+
+        <div class="toolbar-item" id="reportYearSelectorWrapper">
+          <label><i data-lucide="calendar"></i> Ano:</label>
+          <select id="reportYearSelect" onchange="app.renderReportsTab()">
+            <!-- Generated by JS -->
+          </select>
+        </div>
+      </div>
+
+      <!-- Report Paper Sheet (Print Friendly) -->
+      <div id="reportSheetContainer" class="report-sheet-container">
+        <!-- Dynamically generated report document -->
+      </div>
+    </section>
+
+    <!-- TAB 4: CALENDAR VIEW -->
     <section id="tab-calendar" class="tab-content">
       <div class="calendar-header-bar">
         <button onclick="app.changeCalendarMonth(-1)" class="icon-btn-sm"><i data-lucide="chevron-left"></i></button>
@@ -442,7 +574,7 @@
       </div>
     </section>
 
-    <!-- TAB 4: BY PERSON / CARTÕES DE TERCEIROS / CHAVE PIX -->
+    <!-- TAB 5: BY PERSON / CARTÕES DE TERCEIROS / CHAVE PIX -->
     <section id="tab-people" class="tab-content">
       <div class="people-header">
         <div>
@@ -461,13 +593,6 @@
 
   </main>
 
-  <!-- App Footer -->
-  <footer class="app-footer">
-    <div class="footer-content">
-      <p>✨ <strong>Desenvolvido por Vivian Bastos</strong> • Controle Financeiro Pessoal</p>
-    </div>
-  </footer>
-
   <!-- MODAL: ADD / EDIT ACCOUNT -->
   <div id="accountModal" class="modal-overlay hidden">
     <div class="modal-card">
@@ -478,6 +603,14 @@
 
       <form id="accountForm" onsubmit="app.saveAccount(event)">
         <input type="hidden" id="accId">
+
+        <!-- Member / Profile Selection (Who owns this bill?) -->
+        <div class="form-group col-12" id="memberSelectGroup">
+          <label for="accMember"><i data-lucide="user-check"></i> Pertence a qual Usuário / Membro? *</label>
+          <select id="accMember" required>
+            <!-- Rendered by JS -->
+          </select>
+        </div>
 
         <!-- Type Selector Tabs: Pagar / Receber -->
         <div class="type-selector">
@@ -495,7 +628,7 @@
           <!-- Descrição -->
           <div class="form-group col-12">
             <label for="accTitle" id="labelAccTitle">Descrição da Conta / Serviço *</label>
-            <input type="text" id="accTitle" placeholder="Ex: Venda de produto, Serviço prestado, Salário" required>
+            <input type="text" id="accTitle" placeholder="Ex: Compra Mercado, Fatura Cartão, Salário" required>
           </div>
 
           <!-- Pessoa / Favorecido -->
@@ -503,7 +636,7 @@
             <label for="accPerson" id="labelAccPerson">
               <i data-lucide="user"></i> Para quem devo pagar? *
             </label>
-            <input type="text" id="accPerson" list="peopleDatalist" placeholder="Ex: Nome da pessoa / Cliente" required onchange="app.autoFillPixKey(this.value)">
+            <input type="text" id="accPerson" list="peopleDatalist" placeholder="Ex: Cartão da Lílian, Cunhado, Mercado" required onchange="app.autoFillPixKey(this.value)">
             <datalist id="peopleDatalist"></datalist>
           </div>
 
@@ -515,16 +648,15 @@
             <input type="text" id="accPixKey" placeholder="CPF, Celular, E-mail ou Aleatória">
           </div>
 
-          <!-- Valor TOTAL (R$) -->
+          <!-- Valor (R$) -->
           <div class="form-group col-6">
-            <label for="accAmount" id="labelAccAmount">Valor Total (R$) *</label>
-            <input type="number" step="0.01" id="accAmount" placeholder="0,00" required oninput="app.updateInstallmentPreview()">
-            <small class="help-text-highlight" id="amountHelpNote">💡 Digite o <strong>VALOR TOTAL</strong> da compra/recebimento.</small>
+            <label for="accAmount" id="labelAccAmount">Valor (R$) *</label>
+            <input type="number" step="0.01" id="accAmount" placeholder="0,00" required>
           </div>
 
           <!-- Data de Vencimento / Recebimento -->
           <div class="form-group col-6">
-            <label for="accDueDate" id="labelAccDueDate">Data de Vencimento / Recebimento *</label>
+            <label for="accDueDate" id="labelAccDueDate">Data de Vencimento *</label>
             <input type="date" id="accDueDate" required>
           </div>
 
@@ -532,7 +664,6 @@
           <div class="form-group col-6">
             <label for="accCategory">Categoria</label>
             <select id="accCategory">
-              <option value="Salário/Renda">💰 Salário / Renda / Vendas</option>
               <option value="Cartão de Terceiros">💳 Cartão de Terceiros</option>
               <option value="Moradia">🏠 Moradia (Aluguel, Luz, Água)</option>
               <option value="Alimentação">🛒 Alimentação / Mercado</option>
@@ -540,6 +671,7 @@
               <option value="Saúde">⚕️ Saúde & Farmácia</option>
               <option value="Lazer">🎉 Lazer & Entretenimento</option>
               <option value="Educação">📚 Educação & Cursos</option>
+              <option value="Salário/Renda">💰 Salário / Renda / Vendas</option>
               <option value="Outros">📌 Outros</option>
             </select>
           </div>
@@ -557,15 +689,14 @@
           <div class="form-group col-12 installment-box" id="installmentBox">
             <div class="checkbox-row">
               <input type="checkbox" id="accIsInstallment" onchange="app.toggleInstallmentOptions()">
-              <label for="accIsInstallment" id="labelAccInstallment"><strong>Esta conta foi parcelada? (ex: 3x, 6x)</strong></label>
+              <label for="accIsInstallment" id="labelAccInstallment"><strong>Esta compra foi parcelada? (ex: 6x no cartão)</strong></label>
             </div>
             <div id="installmentOptions" class="installment-options hidden">
               <div class="form-group">
                 <label for="accInstallmentCount">Número de Parcelas:</label>
-                <input type="number" id="accInstallmentCount" min="2" max="60" value="2" oninput="app.updateInstallmentPreview()">
+                <input type="number" id="accInstallmentCount" min="2" max="60" value="2">
               </div>
-              <div id="installmentPreview" class="installment-preview-box"></div>
-              <small class="help-text" id="helpAccInstallment">O valor total digitado acima será dividido automaticamente entre as parcelas!</small>
+              <small class="help-text" id="helpAccInstallment">O app gerará automaticamente uma conta para cada mês seguinte com o valor dividido!</small>
             </div>
           </div>
 
@@ -581,6 +712,69 @@
           <button type="submit" class="btn-primary"><i data-lucide="check"></i> Salvar Conta</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CLOUD SYNC & CROSS-DEVICE EXPLANATION -->
+  <div id="cloudSyncModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2><i data-lucide="cloud" style="color:var(--primary-color)"></i> Sincronização em Nuvem Multi-Dispositivos</h2>
+        <button onclick="app.closeModal('cloudSyncModal')" class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="privacy-modal-content">
+          <div class="privacy-highlight-box">
+            <h3>☁️ Acesse de Qualquer Lugar</h3>
+            <p>Seus dados agora são sincronizados automaticamente entre todos os seus dispositivos!</p>
+          </div>
+
+          <ul class="privacy-list">
+            <li>
+              <strong>📱 No Celular e no Computador:</strong>
+              <p>Ao fazer login com seu **CPF e Senha** no celular, no notebook ou no trabalho, você terá acesso imediato a todas as suas contas atualizadas em tempo real.</p>
+            </li>
+            <li>
+              <strong>🔄 Sincronização Automática:</strong>
+              <p>Cada conta nova, baixa de pagamento ou alteração feita em um aparelho reflete automaticamente nos outros.</p>
+            </li>
+            <li>
+              <strong>⚡ Funciona Também Offline:</strong>
+              <p>Se você ficar sem internet, o aplicativo continua funcionando normalmente e sincroniza assim que a conexão voltar.</p>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button onclick="app.closeModal('cloudSyncModal')" class="btn-primary">Tudo Certo!</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: MANAGE FAMILY MEMBERS / PROFILES -->
+  <div id="membersModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2><i data-lucide="users"></i> Membros e Usuários do CPF</h2>
+        <button onclick="app.closeModal('membersModal')" class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:16px;">
+          Cadastre as pessoas da sua casa (ex: Vivian, Esposo, Filho, Vivian PJ) para ter controle individual e consolidado:
+        </p>
+
+        <div class="add-member-form">
+          <input type="text" id="newMemberInput" placeholder="Nome do novo membro (ex: Esposo, Filho)">
+          <button onclick="app.addMemberFromModal()" class="btn-primary"><i data-lucide="plus"></i> Adicionar</button>
+        </div>
+
+        <div id="membersListModal" class="members-list-modal">
+          <!-- Rendered dynamically by JS -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button onclick="app.closeModal('membersModal')" class="btn-secondary">Fechar</button>
+      </div>
     </div>
   </div>
 
@@ -611,9 +805,9 @@
       </div>
       <div class="modal-body">
         <div class="backup-section highlight-box">
-          <h3>🧹 Zerar Contas e Iniciar Minhas Contas Reais</h3>
-          <p>Apague todas as contas de teste e deixe seu aplicativo zerado e limpo para você colocar suas contas verdadeiras.</p>
-          <button onclick="app.clearDemoAccountsPrompt()" class="btn-danger-sm" style="font-size:1rem; padding:10px 16px;"><i data-lucide="trash-2"></i> Zerar Contas de Teste Agora</button>
+          <h3>🧹 Zerar Contas de Teste</h3>
+          <p>Apague as contas de teste e deixe seu aplicativo zerado e limpo para colocar suas contas verdadeiras.</p>
+          <button onclick="app.clearDemoAccountsPrompt()" class="btn-danger-sm" style="font-size:0.95rem; padding:10px 16px;"><i data-lucide="trash-2"></i> Zerar Contas de Teste</button>
         </div>
 
         <hr class="divider">
@@ -632,23 +826,6 @@
           <input type="file" id="importFileInput" accept=".json" class="hidden" onchange="app.importDataJSON(event)">
           <button onclick="document.getElementById('importFileInput').click()" class="btn-secondary"><i data-lucide="upload"></i> Selecionar Arquivo JSON</button>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: REPORT PREVIEW -->
-  <div id="reportModal" class="modal-overlay hidden">
-    <div class="modal-card modal-lg">
-      <div class="modal-header">
-        <h2><i data-lucide="file-text"></i> Extrato de Prestação de Contas</h2>
-        <button onclick="app.closeModal('reportModal')" class="modal-close">&times;</button>
-      </div>
-      <div class="modal-body" id="reportPrintArea">
-        <!-- Rendered Report Content -->
-      </div>
-      <div class="modal-footer">
-        <button onclick="window.print()" class="btn-secondary"><i data-lucide="printer"></i> Imprimir / Salvar em PDF</button>
-        <button onclick="app.closeModal('reportModal')" class="btn-primary">Fechar</button>
       </div>
     </div>
   </div>
