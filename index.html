@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Minhas Contas - Controle Financeiro Pessoal</title>
+  
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#10b981">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Minhas Contas">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Canvas Confetti for payment celebrations -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="not-logged-in">
+
+  <!-- Screen Lock PIN Overlay -->
+  <div id="pinOverlay" class="pin-overlay hidden">
+    <div class="pin-card">
+      <div class="pin-icon"><i data-lucide="lock"></i></div>
+      <h2>Aplicativo Bloqueado</h2>
+      <p>Digite seu PIN de 4 dígitos para acessar</p>
+      <div class="pin-dots">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      </div>
+      <div class="pin-pad">
+        <button onclick="app.enterPin('1')">1</button>
+        <button onclick="app.enterPin('2')">2</button>
+        <button onclick="app.enterPin('3')">3</button>
+        <button onclick="app.enterPin('4')">4</button>
+        <button onclick="app.enterPin('5')">5</button>
+        <button onclick="app.enterPin('6')">6</button>
+        <button onclick="app.enterPin('7')">7</button>
+        <button onclick="app.enterPin('8')">8</button>
+        <button onclick="app.enterPin('9')">9</button>
+        <button onclick="app.clearPin()" class="btn-subtle"><i data-lucide="delete"></i></button>
+        <button onclick="app.enterPin('0')">0</button>
+        <button onclick="app.checkPin()" class="btn-primary-sm"><i data-lucide="check"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- WELCOME LANDING & LOGIN / REGISTRATION OVERLAY -->
+  <div id="authOverlay" class="auth-overlay">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-logo"><i data-lucide="wallet"></i></div>
+        <h2>Minhas Contas</h2>
+        <p class="auth-subtitle">Seu Controle Financeiro Pessoal, Simples e Privado</p>
+      </div>
+
+      <!-- Explanation & Instructions -->
+      <div class="auth-explanation">
+        <h3>💡 O que é este aplicativo?</h3>
+        <p>Um gerenciador financeiro completo e gratuito para você organizar suas contas a pagar, valores a receber, compras parceladas e guardar suas chaves Pix com privacidade.</p>
+
+        <div class="auth-steps-grid">
+          <div class="auth-step">
+            <span class="step-num">1</span>
+            <strong>Crie sua Conta</strong>
+            <p>Cadastre-se para ter seu espaço exclusivo e 100% privado.</p>
+          </div>
+          <div class="auth-step">
+            <span class="step-num">2</span>
+            <strong>Cadastre Contas</strong>
+            <p>Adicione boletos, cartões e contas a receber facilmente.</p>
+          </div>
+          <div class="auth-step">
+            <span class="step-num">3</span>
+            <strong>Seus Dados Seguros</strong>
+            <p>Suas informações ficam salvas apenas no seu próprio celular/dispositivo.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Auth Tabs: Login vs Register -->
+      <div class="auth-tabs">
+        <button id="tabBtnLogin" class="auth-tab-btn active" onclick="app.switchAuthTab('login')">
+          <i data-lucide="log-in"></i> Entrar
+        </button>
+        <button id="tabBtnRegister" class="auth-tab-btn" onclick="app.switchAuthTab('register')">
+          <i data-lucide="user-plus"></i> Criar Conta Grátis
+        </button>
+      </div>
+
+      <!-- Form 1: Login -->
+      <form id="loginForm" class="auth-form" onsubmit="app.handleLogin(event)">
+        <div class="form-group">
+          <label for="loginUsername"><i data-lucide="user"></i> Usuário ou E-mail</label>
+          <input type="text" id="loginUsername" placeholder="Digite seu usuário ou e-mail" required>
+        </div>
+        <div class="form-group">
+          <label for="loginPassword"><i data-lucide="lock"></i> Senha</label>
+          <input type="password" id="loginPassword" placeholder="Digite sua senha" required>
+        </div>
+        <button type="submit" class="btn-primary btn-block"><i data-lucide="log-in"></i> Entrar no Meu Aplicativo</button>
+      </form>
+
+      <!-- Form 2: Register -->
+      <form id="registerForm" class="auth-form hidden" onsubmit="app.handleRegister(event)">
+        <div class="form-group">
+          <label for="regName"><i data-lucide="user"></i> Seu Nome Completo</label>
+          <input type="text" id="regName" placeholder="Ex: Maria Silva" required>
+        </div>
+        <div class="form-group">
+          <label for="regUsername"><i data-lucide="at-sign"></i> Usuário ou E-mail para Login</label>
+          <input type="text" id="regUsername" placeholder="Ex: maria@email.com ou maria123" required>
+        </div>
+        <div class="form-group">
+          <label for="regPassword"><i data-lucide="lock"></i> Crie uma Senha</label>
+          <input type="password" id="regPassword" placeholder="Sua senha de acesso" required minlength="3">
+        </div>
+        <button type="submit" class="btn-primary btn-block"><i data-lucide="user-plus"></i> Criar Minha Conta Grátis</button>
+      </form>
+
+      <div class="auth-footer">
+        <button type="button" onclick="app.handleGuestAccess()" class="btn-link-guest">
+          <i data-lucide="sparkles"></i> Testar sem cadastro (Modo Convidado)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PWA Install Banner (Android) -->
+  <div id="installBanner" class="install-banner hidden">
+    <div class="banner-content">
+      <span class="banner-icon">📱</span>
+      <div>
+        <strong>Instalar "Minhas Contas"</strong>
+        <p>Adicione à tela inicial do seu celular para usar como aplicativo!</p>
+      </div>
+    </div>
+    <div class="banner-actions">
+      <button id="btnInstallPwa" class="btn-install">Instalar</button>
+      <button onclick="app.closeInstallBanner()" class="btn-dismiss">&times;</button>
+    </div>
+  </div>
+
+  <!-- PWA Install Banner (iOS / iPhone Special Popup) -->
+  <div id="iosInstallBanner" class="install-banner ios-banner hidden">
+    <div class="banner-content">
+      <span class="banner-icon">📲</span>
+      <div>
+        <strong>Instalar no iPhone</strong>
+        <p>Toque em <strong>Compartilhar <i data-lucide="share" style="width:12px; height:12px; display:inline"></i></strong> e selecione <strong>"Adicionar à Tela de Início"</strong>!</p>
+      </div>
+    </div>
+    <div class="banner-actions">
+      <button onclick="document.getElementById('iosInstallBanner').classList.add('hidden')" class="btn-dismiss">&times;</button>
+    </div>
+  </div>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-logo">
+          <i data-lucide="wallet"></i>
+        </div>
+        <div>
+          <h1>Minhas Contas</h1>
+          <div class="user-session-badge" id="userSessionBadge">
+            <span id="currentUserNameDisplay">👤 Usuário</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Clear Demo Data Button -->
+        <button class="btn-clear-demo" onclick="app.clearDemoAccountsPrompt()" title="Apagar contas de teste e colocar minhas contas reais">
+          <i data-lucide="sparkles"></i> <span>Zerar Contas</span>
+        </button>
+
+        <!-- Theme Toggle -->
+        <button class="icon-btn" id="themeToggle" onclick="app.toggleTheme()" title="Alternar Tema (Claro/Escuro)">
+          <i data-lucide="sun" id="themeIcon"></i>
+        </button>
+
+        <!-- Lock PIN Toggle -->
+        <button class="icon-btn" onclick="app.togglePinLock()" id="pinToggleBtn" title="Bloquear com PIN">
+          <i data-lucide="lock"></i>
+        </button>
+
+        <!-- Backup/Restore -->
+        <button class="icon-btn" onclick="app.openModal('backupModal')" title="Backup & Compartilhar">
+          <i data-lucide="download-cloud"></i>
+        </button>
+
+        <!-- Prominent Logout Button -->
+        <button class="btn-danger-logout" onclick="app.logoutUser()" title="Sair da Conta">
+          <i data-lucide="log-out"></i> <span>Sair</span>
+        </button>
+
+        <!-- Add Transaction Button -->
+        <button class="btn-add" onclick="app.openNewModal()">
+          <i data-lucide="plus"></i>
+          <span class="btn-text">Nova Conta</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs (Mobile & Desktop) -->
+  <nav class="nav-tabs">
+    <button class="nav-tab active" data-tab="dashboard" onclick="app.switchTab('dashboard')">
+      <i data-lucide="layout-dashboard"></i>
+      <span>Resumo</span>
+    </button>
+    <button class="nav-tab" data-tab="list" onclick="app.switchTab('list')">
+      <i data-lucide="list-todo"></i>
+      <span>Todas as Contas</span>
+    </button>
+    <button class="nav-tab" data-tab="calendar" onclick="app.switchTab('calendar')">
+      <i data-lucide="calendar"></i>
+      <span>Calendário</span>
+    </button>
+    <button class="nav-tab" data-tab="people" onclick="app.switchTab('people')">
+      <i data-lucide="users"></i>
+      <span>Por Pessoa / Pix</span>
+    </button>
+  </nav>
+
+  <!-- Main Container -->
+  <main class="main-container">
+
+    <!-- TAB 1: DASHBOARD -->
+    <section id="tab-dashboard" class="tab-content active">
+      <!-- Filter Bar Header -->
+      <div class="filter-bar">
+        <div class="month-selector">
+          <button onclick="app.changeMonth(-1)" class="icon-btn-sm"><i data-lucide="chevron-left"></i></button>
+          <span id="currentMonthYearDisplay" class="month-title">Agosto 2026</span>
+          <button onclick="app.changeMonth(1)" class="icon-btn-sm"><i data-lucide="chevron-right"></i></button>
+          <button onclick="app.resetToCurrentMonth()" class="btn-today">Mês Atual</button>
+        </div>
+
+        <div class="person-filter-wrapper">
+          <i data-lucide="user-check"></i>
+          <select id="dashboardPersonFilter" onchange="app.renderDashboard()">
+            <option value="all">Todas as Pessoas / Todos os Cartões</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Overdue Alert Banner if any -->
+      <div id="overdueAlert" class="alert-banner hidden">
+        <i data-lucide="alert-triangle"></i>
+        <div class="alert-info">
+          <strong>Atenção! Você possui contas atrasadas.</strong>
+          <span id="overdueAlertText">0 contas vencidas totalizando R$ 0,00</span>
+        </div>
+        <button class="btn-alert-action" onclick="app.filterByStatus('vencidas')">Ver Contas Atrasadas</button>
+      </div>
+
+      <!-- KPI Summary Cards -->
+      <div class="kpi-grid">
+        <!-- Total A Pagar -->
+        <div class="kpi-card danger">
+          <div class="kpi-header">
+            <span class="kpi-label">A Pagar no Mês</span>
+            <div class="kpi-icon"><i data-lucide="arrow-down-circle"></i></div>
+          </div>
+          <div class="kpi-value" id="kpiToPay">R$ 0,00</div>
+          <div class="kpi-subtext" id="kpiToPaySub">0 contas pendentes</div>
+        </div>
+
+        <!-- Total A Receber -->
+        <div class="kpi-card success">
+          <div class="kpi-header">
+            <span class="kpi-label">A Receber no Mês</span>
+            <div class="kpi-icon"><i data-lucide="arrow-up-circle"></i></div>
+          </div>
+          <div class="kpi-value" id="kpiToReceive">R$ 0,00</div>
+          <div class="kpi-subtext" id="kpiToReceiveSub">0 contas a receber</div>
+        </div>
+
+        <!-- Saldo Previsto -->
+        <div class="kpi-card info">
+          <div class="kpi-header">
+            <span class="kpi-label">Saldo Previsto do Mês</span>
+            <div class="kpi-icon"><i data-lucide="scale"></i></div>
+          </div>
+          <div class="kpi-value" id="kpiBalance">R$ 0,00</div>
+          <div class="kpi-subtext" id="kpiBalanceSub">Diferença (Receber - Pagar)</div>
+        </div>
+
+        <!-- Já Pago no Mês -->
+        <div class="kpi-card accent">
+          <div class="kpi-header">
+            <span class="kpi-label">Já Pago neste Mês</span>
+            <div class="kpi-icon"><i data-lucide="check-circle-2"></i></div>
+          </div>
+          <div class="kpi-value" id="kpiAlreadyPaid">R$ 0,00</div>
+          <div class="kpi-subtext" id="kpiAlreadyPaidSub">Contas quitadas</div>
+        </div>
+      </div>
+
+      <!-- Charts & Fast Access Section -->
+      <div class="dashboard-widgets">
+        <!-- Chart: Categorias -->
+        <div class="widget-card">
+          <div class="widget-header">
+            <h3><i data-lucide="pie-chart"></i> Gastos por Categoria</h3>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="categoryChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Upcoming Bills Widget -->
+        <div class="widget-card">
+          <div class="widget-header">
+            <h3><i data-lucide="clock"></i> Próximos Vencimentos</h3>
+            <button class="btn-text-only" onclick="app.switchTab('list')">Ver Todas</button>
+          </div>
+          <div id="upcomingList" class="upcoming-list">
+            <!-- Dynamic items -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: ALL ACCOUNTS LIST -->
+    <section id="tab-list" class="tab-content">
+      <!-- Search and Filter Controls -->
+      <div class="controls-panel">
+        <div class="search-box">
+          <i data-lucide="search"></i>
+          <input type="text" id="searchInput" placeholder="Buscar conta, pessoa ou categoria..." oninput="app.renderList()">
+        </div>
+
+        <div class="filters-row">
+          <select id="statusFilter" onchange="app.renderList()">
+            <option value="all">Todos os Status</option>
+            <option value="pending">Pendentes</option>
+            <option value="overdue">Atrasadas (Vencidas)</option>
+            <option value="paid">Pagas / Recebidas</option>
+          </select>
+
+          <select id="typeFilter" onchange="app.renderList()">
+            <option value="all">Todos os Tipos</option>
+            <option value="pay">A Pagar (Despesas)</option>
+            <option value="receive">A Receber (Receitas)</option>
+          </select>
+
+          <select id="personListFilter" onchange="app.renderList()">
+            <option value="all">Todas as Pessoas / Terceiros</option>
+          </select>
+
+          <select id="categoryFilter" onchange="app.renderList()">
+            <option value="all">Todas as Categorias</option>
+          </select>
+
+          <button onclick="app.clearListFilters()" class="btn-secondary" title="Limpar Filtros">
+            <i data-lucide="rotate-ccw"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Batch Actions Bar (for multi-selecting and deleting multiple accounts) -->
+      <div id="batchActionBar" class="batch-action-bar hidden">
+        <div class="batch-info">
+          <label class="batch-select-all">
+            <input type="checkbox" id="selectAllCheckbox" onchange="app.toggleSelectAll(this.checked)">
+            <span><strong>Selecionar Todas</strong></span>
+          </label>
+          <span id="selectedCountText" class="selected-count-badge">0 selecionadas</span>
+        </div>
+        <div class="batch-buttons">
+          <button type="button" class="btn-batch-paid" onclick="app.markSelectedAsPaid()">
+            <i data-lucide="check-circle-2"></i> Concluir Selecionadas
+          </button>
+          <button type="button" class="btn-batch-delete" onclick="app.deleteSelectedAccounts()">
+            <i data-lucide="trash-2"></i> Apagar Selecionadas
+          </button>
+          <button type="button" class="btn-batch-cancel" onclick="app.clearSelection()">
+            &times; Limpar Seleção
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Action Total Summary for current filter -->
+      <div class="list-summary-bar">
+        <span>Mostrando <strong id="filteredCount">0</strong> contas</span>
+        <div class="summary-pills">
+          <span class="pill pill-danger">Pagar: <strong id="listSumPay">R$ 0,00</strong></span>
+          <span class="pill pill-success">Receber: <strong id="listSumReceive">R$ 0,00</strong></span>
+        </div>
+      </div>
+
+      <!-- Accounts Table / Mobile Cards Container -->
+      <div id="accountsContainer" class="accounts-container">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+
+    <!-- TAB 3: CALENDAR VIEW -->
+    <section id="tab-calendar" class="tab-content">
+      <div class="calendar-header-bar">
+        <button onclick="app.changeCalendarMonth(-1)" class="icon-btn-sm"><i data-lucide="chevron-left"></i></button>
+        <h2 id="calendarMonthTitle" class="calendar-title">Agosto 2026</h2>
+        <button onclick="app.changeCalendarMonth(1)" class="icon-btn-sm"><i data-lucide="chevron-right"></i></button>
+      </div>
+
+      <div class="calendar-grid-wrapper">
+        <div class="calendar-weekdays">
+          <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
+        </div>
+        <div id="calendarDaysGrid" class="calendar-days-grid">
+          <!-- Calendar Days Rendered by JS -->
+        </div>
+      </div>
+
+      <!-- Selected Day Details Panel -->
+      <div id="calendarDayDetails" class="day-details-panel hidden">
+        <div class="day-details-header">
+          <h3 id="selectedDayTitle">Contas do dia 15/08/2026</h3>
+          <button onclick="app.closeDayDetails()" class="btn-dismiss">&times;</button>
+        </div>
+        <div id="selectedDayItems" class="selected-day-items">
+          <!-- Items -->
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: BY PERSON / CARTÕES DE TERCEIROS / CHAVE PIX -->
+    <section id="tab-people" class="tab-content">
+      <div class="people-header">
+        <div>
+          <h2>Contas por Pessoa / Chave Pix de Credores</h2>
+          <p>Veja quanto deve ou tem a receber de cada pessoa e copie o Pix com 1 clique!</p>
+        </div>
+        <button class="btn-primary" onclick="app.exportPersonReport()">
+          <i data-lucide="file-text"></i> Gerar Extrato de Prestação de Contas
+        </button>
+      </div>
+
+      <div id="peopleCardsGrid" class="people-cards-grid">
+        <!-- Cards by person rendered dynamically -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- App Footer -->
+  <footer class="app-footer">
+    <div class="footer-content">
+      <p>✨ <strong>Desenvolvido por Vivian Bastos</strong> • Controle Financeiro Pessoal</p>
+    </div>
+  </footer>
+
+  <!-- MODAL: ADD / EDIT ACCOUNT -->
+  <div id="accountModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="modalTitle">Cadastrar Nova Conta</h2>
+        <button onclick="app.closeModal('accountModal')" class="modal-close">&times;</button>
+      </div>
+
+      <form id="accountForm" onsubmit="app.saveAccount(event)">
+        <input type="hidden" id="accId">
+
+        <!-- Type Selector Tabs: Pagar / Receber -->
+        <div class="type-selector">
+          <label class="type-btn pay active">
+            <input type="radio" name="accType" value="pay" checked onchange="app.toggleTypeUI()">
+            <i data-lucide="arrow-down-circle"></i> Conta a Pagar
+          </label>
+          <label class="type-btn receive">
+            <input type="radio" name="accType" value="receive" onchange="app.toggleTypeUI()">
+            <i data-lucide="arrow-up-circle"></i> Conta a Receber
+          </label>
+        </div>
+
+        <div class="form-grid">
+          <!-- Descrição -->
+          <div class="form-group col-12">
+            <label for="accTitle" id="labelAccTitle">Descrição da Conta / Serviço *</label>
+            <input type="text" id="accTitle" placeholder="Ex: Venda de produto, Serviço prestado, Salário" required>
+          </div>
+
+          <!-- Pessoa / Favorecido -->
+          <div class="form-group col-6">
+            <label for="accPerson" id="labelAccPerson">
+              <i data-lucide="user"></i> Para quem devo pagar? *
+            </label>
+            <input type="text" id="accPerson" list="peopleDatalist" placeholder="Ex: Nome da pessoa / Cliente" required onchange="app.autoFillPixKey(this.value)">
+            <datalist id="peopleDatalist"></datalist>
+          </div>
+
+          <!-- Chave Pix -->
+          <div class="form-group col-6">
+            <label for="accPixKey">
+              <i data-lucide="qr-code"></i> Chave Pix da Pessoa
+            </label>
+            <input type="text" id="accPixKey" placeholder="CPF, Celular, E-mail ou Aleatória">
+          </div>
+
+          <!-- Valor TOTAL (R$) -->
+          <div class="form-group col-6">
+            <label for="accAmount" id="labelAccAmount">Valor Total (R$) *</label>
+            <input type="number" step="0.01" id="accAmount" placeholder="0,00" required oninput="app.updateInstallmentPreview()">
+            <small class="help-text-highlight" id="amountHelpNote">💡 Digite o <strong>VALOR TOTAL</strong> da compra/recebimento.</small>
+          </div>
+
+          <!-- Data de Vencimento / Recebimento -->
+          <div class="form-group col-6">
+            <label for="accDueDate" id="labelAccDueDate">Data de Vencimento / Recebimento *</label>
+            <input type="date" id="accDueDate" required>
+          </div>
+
+          <!-- Categoria -->
+          <div class="form-group col-6">
+            <label for="accCategory">Categoria</label>
+            <select id="accCategory">
+              <option value="Salário/Renda">💰 Salário / Renda / Vendas</option>
+              <option value="Cartão de Terceiros">💳 Cartão de Terceiros</option>
+              <option value="Moradia">🏠 Moradia (Aluguel, Luz, Água)</option>
+              <option value="Alimentação">🛒 Alimentação / Mercado</option>
+              <option value="Transporte">🚗 Transporte / Combustível</option>
+              <option value="Saúde">⚕️ Saúde & Farmácia</option>
+              <option value="Lazer">🎉 Lazer & Entretenimento</option>
+              <option value="Educação">📚 Educação & Cursos</option>
+              <option value="Outros">📌 Outros</option>
+            </select>
+          </div>
+
+          <!-- Status -->
+          <div class="form-group col-6">
+            <label for="accStatus">Status Inicial</label>
+            <select id="accStatus">
+              <option value="pending">🟡 Pendente (A Pagar / A Receber)</option>
+              <option value="paid">🟢 Concluída (Paga / Recebida)</option>
+            </select>
+          </div>
+
+          <!-- Parcelamento (Installments) -->
+          <div class="form-group col-12 installment-box" id="installmentBox">
+            <div class="checkbox-row">
+              <input type="checkbox" id="accIsInstallment" onchange="app.toggleInstallmentOptions()">
+              <label for="accIsInstallment" id="labelAccInstallment"><strong>Esta conta foi parcelada? (ex: 3x, 6x)</strong></label>
+            </div>
+            <div id="installmentOptions" class="installment-options hidden">
+              <div class="form-group">
+                <label for="accInstallmentCount">Número de Parcelas:</label>
+                <input type="number" id="accInstallmentCount" min="2" max="60" value="2" oninput="app.updateInstallmentPreview()">
+              </div>
+              <div id="installmentPreview" class="installment-preview-box"></div>
+              <small class="help-text" id="helpAccInstallment">O valor total digitado acima será dividido automaticamente entre as parcelas!</small>
+            </div>
+          </div>
+
+          <!-- Observações -->
+          <div class="form-group col-12">
+            <label for="accNotes">Observações / Detalhes</label>
+            <textarea id="accNotes" rows="2" placeholder="Ex: Detalhes adicionais..."></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" onclick="app.closeModal('accountModal')" class="btn-secondary">Cancelar</button>
+          <button type="submit" class="btn-primary"><i data-lucide="check"></i> Salvar Conta</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: WHATSAPP MESSAGE GENERATOR -->
+  <div id="whatsappModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2><i data-lucide="message-square" style="color:#22c55e"></i> Enviar Mensagem no WhatsApp</h2>
+        <button onclick="app.closeModal('whatsappModal')" class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Pronto! Geramos um comprovante em texto para você enviar diretamente para o WhatsApp da pessoa:</p>
+        <div class="whatsapp-preview" id="whatsappMessageText"></div>
+      </div>
+      <div class="modal-footer">
+        <button onclick="app.copyWhatsappMessage()" class="btn-secondary"><i data-lucide="copy"></i> Copiar Texto</button>
+        <a id="btnOpenWhatsapp" href="#" target="_blank" class="btn-whatsapp"><i data-lucide="send"></i> Abrir no WhatsApp</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: BACKUP & RESTORE & WIPE DEMO -->
+  <div id="backupModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2><i data-lucide="download-cloud"></i> Gerenciar Dados e Backup</h2>
+        <button onclick="app.closeModal('backupModal')" class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="backup-section highlight-box">
+          <h3>🧹 Zerar Contas e Iniciar Minhas Contas Reais</h3>
+          <p>Apague todas as contas de teste e deixe seu aplicativo zerado e limpo para você colocar suas contas verdadeiras.</p>
+          <button onclick="app.clearDemoAccountsPrompt()" class="btn-danger-sm" style="font-size:1rem; padding:10px 16px;"><i data-lucide="trash-2"></i> Zerar Contas de Teste Agora</button>
+        </div>
+
+        <hr class="divider">
+
+        <div class="backup-section">
+          <h3>1. Exportar Dados (Backup)</h3>
+          <p>Baixe uma cópia de segurança de todas as suas contas em formato JSON para salvar no seu celular ou enviar por e-mail.</p>
+          <button onclick="app.exportDataJSON()" class="btn-primary"><i data-lucide="download"></i> Baixar Arquivo de Backup</button>
+        </div>
+
+        <hr class="divider">
+
+        <div class="backup-section">
+          <h3>2. Importar Dados (Restaurar)</h3>
+          <p>Carregue um arquivo de backup (.json) feito anteriormente ou vindo de outro celular.</p>
+          <input type="file" id="importFileInput" accept=".json" class="hidden" onchange="app.importDataJSON(event)">
+          <button onclick="document.getElementById('importFileInput').click()" class="btn-secondary"><i data-lucide="upload"></i> Selecionar Arquivo JSON</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: REPORT PREVIEW -->
+  <div id="reportModal" class="modal-overlay hidden">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <h2><i data-lucide="file-text"></i> Extrato de Prestação de Contas</h2>
+        <button onclick="app.closeModal('reportModal')" class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body" id="reportPrintArea">
+        <!-- Rendered Report Content -->
+      </div>
+      <div class="modal-footer">
+        <button onclick="window.print()" class="btn-secondary"><i data-lucide="printer"></i> Imprimir / Salvar em PDF</button>
+        <button onclick="app.closeModal('reportModal')" class="btn-primary">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS Code -->
+  <script src="app.js"></script>
+</body>
+</html>
