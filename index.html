@@ -124,7 +124,7 @@
         </div>
 
         <div class="form-group">
-          <label for="regPhoneInput"><i data-lucide="phone"></i> Celular / WhatsApp (com DDD) *</label>
+          <label for="regPhoneInput"><i data-lucide="phone"></i> Celular / Telefone (com DDD) *</label>
           <input 
             type="text" 
             id="regPhoneInput" 
@@ -135,7 +135,7 @@
             autocomplete="tel"
             oninput="app.maskPhone(this)"
           >
-          <small class="help-text">Usado para segurança e recuperação de senha.</small>
+          <small class="help-text">Usado para confirmação de segurança e recuperação rápida de senha.</small>
         </div>
 
         <div class="form-group">
@@ -162,7 +162,7 @@
         </div>
       </form>
 
-      <!-- 3. IN-APP PASSWORD RESET FORM (100% DIRETO NO APP) -->
+      <!-- 3. IN-APP PASSWORD RESET FORM (100% DIRETO NA TELA SEM ABRIR OUTROS APPS) -->
       <form id="forgotForm" onsubmit="app.handleDirectPasswordReset(event)" class="login-form hidden">
         <div class="form-group">
           <label for="forgotCpfInput"><i data-lucide="fingerprint"></i> Seu CPF cadastrado:</label>
@@ -177,18 +177,18 @@
         </div>
 
         <div class="form-group">
-          <label for="forgotVerifyInput"><i data-lucide="shield-check"></i> Confirme seu Celular ou E-mail:</label>
+          <label for="forgotVerifyInput"><i data-lucide="shield-check"></i> Digite seu Telefone ou E-mail cadastrado:</label>
           <input 
             type="text" 
             id="forgotVerifyInput" 
-            placeholder="Digite o celular ou e-mail cadastrado" 
+            placeholder="Telefone ou e-mail de segurança" 
             required
           >
-          <small class="help-text">Confirmação de segurança do titular.</small>
+          <small class="help-text">Confirmação de segurança direta nesta tela.</small>
         </div>
 
         <div class="form-group">
-          <label for="forgotNewPassInput"><i data-lucide="lock"></i> Nova Senha:</label>
+          <label for="forgotNewPassInput"><i data-lucide="lock"></i> Digite sua Nova Senha:</label>
           <div class="password-input-wrapper">
             <input type="password" id="forgotNewPassInput" placeholder="Mínimo 4 caracteres" required minlength="4">
             <button type="button" class="btn-toggle-eye" onclick="app.togglePasswordVisibility('forgotNewPassInput', this)">
@@ -197,8 +197,18 @@
           </div>
         </div>
 
+        <div class="form-group">
+          <label for="forgotConfirmPassInput"><i data-lucide="check"></i> Confirme a Nova Senha:</label>
+          <div class="password-input-wrapper">
+            <input type="password" id="forgotConfirmPassInput" placeholder="Repita a nova senha" required minlength="4">
+            <button type="button" class="btn-toggle-eye" onclick="app.togglePasswordVisibility('forgotConfirmPassInput', this)">
+              <i data-lucide="eye"></i>
+            </button>
+          </div>
+        </div>
+
         <button type="submit" class="btn-primary btn-block" id="btnForgotSubmit">
-          <i data-lucide="check-circle"></i> Salvar Nova Senha e Acessar
+          <i data-lucide="check-circle"></i> Salvar Nova Senha e Entrar
         </button>
 
         <div class="auth-switch-text" style="margin-top:10px;">

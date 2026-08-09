@@ -1,5 +1,5 @@
 /* ==========================================================================
-   MINHAS CONTAS - COMMERCIAL SAAS ENGINE (CLOUD SYNC & GASTOS RÁPIDOS)
+   MINHAS CONTAS - COMMERCIAL SAAS ENGINE (CLOUD SYNC & DIRECT RECOVERY)
    ========================================================================== */
 
 class AccountsApp {
@@ -75,7 +75,7 @@ class AccountsApp {
     document.getElementById('registerForm')?.classList.add('hidden');
     document.getElementById('forgotForm')?.classList.remove('hidden');
     document.getElementById('authCardTitle').textContent = 'Redefinir Senha';
-    document.getElementById('authCardTagline').textContent = 'Digite seu CPF e confirme seu contato para cadastrar uma nova senha.';
+    document.getElementById('authCardTagline').textContent = 'Informe seu CPF e seu Telefone ou E-mail para criar uma nova senha diretamente aqui.';
 
     const loginCpf = document.getElementById('loginCpfInput')?.value;
     const forgotCpf = document.getElementById('forgotCpfInput');
@@ -255,6 +255,9 @@ class AccountsApp {
     this.showToast(`Cadastro concluído na nuvem! Bem-vindo(a), ${name}!`);
   }
 
+  /* ------------------------------------------------------------------------
+     3. 100% IN-APP PASSWORD RESET (SEM ABRIR OUTROS PROGRAMAS)
+     ------------------------------------------------------------------------ */
   async handleDirectPasswordReset(e) {
     e.preventDefault();
     const btnSubmit = document.getElementById('btnForgotSubmit');
@@ -264,17 +267,25 @@ class AccountsApp {
     const cleanCpf = cpfRaw.replace(/\D/g, '');
     const verifyInput = document.getElementById('forgotVerifyInput')?.value.trim().toLowerCase() || '';
     const newPass = document.getElementById('forgotNewPassInput')?.value || '';
+    const confirmPass = document.getElementById('forgotConfirmPassInput')?.value || '';
 
     if (cleanCpf.length !== 11) {
       alert('Por favor, digite o CPF cadastrado com 11 dígitos.');
-      if (btnSubmit) { btnSubmit.disabled = false; btnSubmit.innerHTML = '<i data-lucide="check-circle"></i> Salvar Nova Senha e Acessar'; }
+      if (btnSubmit) { btnSubmit.disabled = false; btnSubmit.innerHTML = '<i data-lucide="check-circle"></i> Salvar Nova Senha e Entrar'; }
+      if (window.lucide) lucide.createIcons();
+      return;
+    }
+
+    if (newPass !== confirmPass) {
+      alert('A nova senha e a confirmação não são iguais.');
+      if (btnSubmit) { btnSubmit.disabled = false; btnSubmit.innerHTML = '<i data-lucide="check-circle"></i> Salvar Nova Senha e Entrar'; }
       if (window.lucide) lucide.createIcons();
       return;
     }
 
     if (!newPass || newPass.length < 4) {
       alert('A nova senha deve ter no mínimo 4 caracteres.');
-      if (btnSubmit) { btnSubmit.disabled = false; btnSubmit.innerHTML = '<i data-lucide="check-circle"></i> Salvar Nova Senha e Acessar'; }
+      if (btnSubmit) { btnSubmit.disabled = false; btnSubmit.innerHTML = '<i data-lucide="check-circle"></i> Salvar Nova Senha e Entrar'; }
       if (window.lucide) lucide.createIcons();
       return;
     }
@@ -282,11 +293,12 @@ class AccountsApp {
     const user = await this.fetchUserDataByCpf(cleanCpf);
     if (!user) {
       alert('Nenhum cadastro encontrado para este CPF.');
-      if (btnSubmit) { btnSubmit.disabled = false; btnSubmit.innerHTML = '<i data-lucide="check-circle"></i> Salvar Nova Senha e Acessar'; }
+      if (btnSubmit) { btnSubmit.disabled = false; btnSubmit.innerHTML = '<i data-lucide="check-circle"></i> Salvar Nova Senha e Entrar'; }
       if (window.lucide) lucide.createIcons();
       return;
     }
 
+    // Verify contact matching (either phone digits or email)
     const userPhoneClean = (user.phone || '').replace(/\D/g, '');
     const verifyClean = verifyInput.replace(/\D/g, '');
     const userEmail = (user.email || '').toLowerCase().trim();
@@ -294,13 +306,14 @@ class AccountsApp {
     const phoneMatches = userPhoneClean && (verifyClean.includes(userPhoneClean) || userPhoneClean.includes(verifyClean));
     const emailMatches = userEmail && userEmail === verifyInput;
 
-    if (!phoneMatches && !emailMatches && user.phone && user.email) {
-      alert('O celular ou e-mail digitado não confere com o cadastro deste CPF.');
-      if (btnSubmit) { btnSubmit.disabled = false; btnSubmit.innerHTML = '<i data-lucide="check-circle"></i> Salvar Nova Senha e Acessar'; }
+    if (!phoneMatches && !emailMatches && (user.phone || user.email)) {
+      alert('O telefone ou e-mail digitado não confere com o cadastro deste CPF.');
+      if (btnSubmit) { btnSubmit.disabled = false; btnSubmit.innerHTML = '<i data-lucide="check-circle"></i> Salvar Nova Senha e Entrar'; }
       if (window.lucide) lucide.createIcons();
       return;
     }
 
+    // Update password
     user.password = newPass;
     this.saveLocalUserData(user);
     this.activeUser = user;
@@ -396,7 +409,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     3. GASTOS RÁPIDOS DO DIA A DIA (EXPRESS)
+     4. GASTOS RÁPIDOS DO DIA A DIA (EXPRESS)
      ------------------------------------------------------------------------ */
   openQuickExpenseModal(defaultTitle = '', defaultCat = 'Alimentação') {
     const amountInput = document.getElementById('quickAmount');
@@ -449,7 +462,7 @@ class AccountsApp {
       dueDate: todayStr,
       paidAt: todayStr,
       category: category,
-      status: 'paid', // Gasto rápido já nasce quitado/à vista
+      status: 'paid',
       type: 'pay',
       isQuickExpense: true,
       notes: `Compra do dia a dia • Forma de Pagamento: ${paymentMethod}`
@@ -539,7 +552,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     4. DATA STORAGE & PROFILES
+     5. DATA STORAGE & PROFILES
      ------------------------------------------------------------------------ */
   getCpfStorageKey(subKey) {
     return `minhas_contas_cpf_${this.activeCpf}_${subKey}`;
@@ -674,7 +687,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     5. PROFILE & MEMBER MANAGEMENT
+     6. PROFILE & MEMBER MANAGEMENT
      ------------------------------------------------------------------------ */
   switchUserProfile(profileId) {
     this.activeProfileId = profileId;
@@ -784,7 +797,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     6. SMART BUDGET GOAL
+     7. SMART BUDGET GOAL
      ------------------------------------------------------------------------ */
   editBudgetGoalPrompt() {
     const current = this.budgetGoal;
@@ -799,7 +812,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     7. THEME & PWA
+     8. THEME & PWA
      ------------------------------------------------------------------------ */
   initTheme() {
     const savedTheme = localStorage.getItem(this.THEME_KEY) || 'dark';
@@ -857,7 +870,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     8. NAVIGATION & RENDER PIPELINE
+     9. NAVIGATION & RENDER PIPELINE
      ------------------------------------------------------------------------ */
   switchTab(tabId) {
     this.currentTab = tabId;
@@ -977,7 +990,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     9. DASHBOARD RENDERER
+     10. DASHBOARD RENDERER
      ------------------------------------------------------------------------ */
   renderDashboard() {
     const curYear = this.selectedDate.getFullYear();
@@ -1165,7 +1178,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     10. LIST TAB RENDERER
+     11. LIST TAB RENDERER
      ------------------------------------------------------------------------ */
   renderList() {
     const search = document.getElementById('searchInput')?.value.toLowerCase() || '';
@@ -1302,7 +1315,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     11. REPORTS TAB ENGINE
+     12. REPORTS TAB ENGINE
      ------------------------------------------------------------------------ */
   populateReportSelectors() {
     const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
@@ -1627,7 +1640,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     12. CALENDAR TAB RENDERER
+     13. CALENDAR TAB RENDERER
      ------------------------------------------------------------------------ */
   renderCalendar() {
     const year = this.calendarDate.getFullYear();
@@ -1703,7 +1716,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     13. BY PERSON VIEW & CHAVE PIX REGISTRY
+     14. BY PERSON VIEW & CHAVE PIX REGISTRY
      ------------------------------------------------------------------------ */
   renderPeople() {
     const grid = document.getElementById('peopleCardsGrid');
@@ -1808,7 +1821,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     14. CRUD OPERATIONS (ADD / EDIT ACCOUNTS)
+     15. CRUD OPERATIONS (ADD / EDIT ACCOUNTS)
      ------------------------------------------------------------------------ */
   openNewModal() {
     document.getElementById('accId').value = '';
@@ -1998,7 +2011,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     15. WHATSAPP MESSAGE GENERATOR & REPORTS
+     16. WHATSAPP MESSAGE GENERATOR & REPORTS
      ------------------------------------------------------------------------ */
   openWhatsappModal(id) {
     const acc = this.accounts.find(a => a.id === id);
@@ -2042,7 +2055,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     16. BACKUP & RESTORE JSON
+     17. BACKUP & RESTORE JSON
      ------------------------------------------------------------------------ */
   exportDataJSON() {
     const exportPayload = {
@@ -2105,7 +2118,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     17. UTILS & TOASTS
+     18. UTILS & TOASTS
      ------------------------------------------------------------------------ */
   openModal(modalId) {
     if (modalId === 'membersModal') {
