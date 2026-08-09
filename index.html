@@ -270,6 +270,12 @@
       </div>
 
       <div class="header-actions">
+        <!-- Quick Income Button (💰 Lançar Receita) -->
+        <button class="btn-add-income-quick" onclick="app.openNewIncomeModal()" title="Lançar Salário ou Receita">
+          <i data-lucide="plus"></i>
+          <span class="btn-text">Lançar Receita</span>
+        </button>
+
         <!-- Quick Expense Button (⚡ Gasto Rápido) -->
         <button class="btn-quick-expense" onclick="app.openQuickExpenseModal()" title="Lançar Gasto Rápido do Dia a Dia">
           <i data-lucide="zap"></i>
@@ -305,6 +311,10 @@
     <button class="nav-tab active" data-tab="dashboard" onclick="app.switchTab('dashboard')">
       <i data-lucide="layout-dashboard"></i>
       <span>Resumo</span>
+    </button>
+    <button class="nav-tab" data-tab="income" onclick="app.switchTab('income')">
+      <i data-lucide="wallet-cards" style="color:#10b981"></i>
+      <span>Entradas & Salário</span>
     </button>
     <button class="nav-tab" data-tab="list" onclick="app.switchTab('list')">
       <i data-lucide="list-todo"></i>
@@ -476,7 +486,36 @@
       </div>
     </section>
 
-    <!-- TAB 2: ALL ACCOUNTS LIST -->
+    <!-- TAB 2: ENTRADAS & RECEITAS (SALÁRIO, VALE, RENDAS EXTRAS) -->
+    <section id="tab-income" class="tab-content">
+      <div class="quick-expenses-header">
+        <div>
+          <h2><i data-lucide="wallet-cards" style="color:#10b981"></i> Entradas, Salário & Adiantamentos</h2>
+          <p>Acompanhe quando entra o seu pagamento, vale quinzenal e rendas extras no mês.</p>
+        </div>
+        <button class="btn-add-income-quick" onclick="app.openNewIncomeModal()" style="font-size:0.95rem; padding:10px 18px; background:var(--primary-color); color:#fff;">
+          <i data-lucide="plus"></i> Lançar Receita / Salário
+        </button>
+      </div>
+
+      <!-- Income KPI Summary Row -->
+      <div class="quick-expenses-kpi-row">
+        <div class="quick-kpi-box" style="border-left-color:var(--primary-color)">
+          <span>Total a Receber Neste Mês</span>
+          <strong id="incomeMonthTotal" style="color:var(--primary-color)">R$ 0,00</strong>
+        </div>
+        <div class="quick-kpi-box" style="border-left-color:var(--info-color)">
+          <span>Total Já Recebido / Na Conta</span>
+          <strong id="incomeMonthReceived" style="color:var(--info-color)">R$ 0,00</strong>
+        </div>
+      </div>
+
+      <div id="incomeAccountsList" class="accounts-container">
+        <!-- Dynamic list of income items -->
+      </div>
+    </section>
+
+    <!-- TAB 3: ALL ACCOUNTS LIST -->
     <section id="tab-list" class="tab-content">
       <!-- Search and Filter Controls -->
       <div class="controls-panel">
@@ -528,7 +567,7 @@
       </div>
     </section>
 
-    <!-- TAB 3: GASTOS RÁPIDOS DO DIA A DIA -->
+    <!-- TAB 4: GASTOS RÁPIDOS DO DIA A DIA -->
     <section id="tab-quick-expenses" class="tab-content">
       <div class="quick-expenses-header">
         <div>
@@ -556,7 +595,7 @@
       </div>
     </section>
 
-    <!-- TAB 4: RELATÓRIOS -->
+    <!-- TAB 5: RELATÓRIOS -->
     <section id="tab-reports" class="tab-content">
       <div class="reports-header-panel">
         <div class="reports-header-info">
@@ -606,7 +645,7 @@
       </div>
     </section>
 
-    <!-- TAB 5: CALENDAR VIEW -->
+    <!-- TAB 6: CALENDAR VIEW -->
     <section id="tab-calendar" class="tab-content">
       <div class="calendar-header-bar">
         <button onclick="app.changeCalendarMonth(-1)" class="icon-btn-sm"><i data-lucide="chevron-left"></i></button>
@@ -635,7 +674,7 @@
       </div>
     </section>
 
-    <!-- TAB 6: BY PERSON / CARTÕES DE TERCEIROS / CHAVE PIX -->
+    <!-- TAB 7: BY PERSON / CARTÕES DE TERCEIROS / CHAVE PIX -->
     <section id="tab-people" class="tab-content">
       <div class="people-header">
         <div>
@@ -725,7 +764,7 @@
     </div>
   </div>
 
-  <!-- MODAL: ADD / EDIT ACCOUNT (COM PARCELAMENTO DIRETO POR VALOR DA PARCELA) -->
+  <!-- MODAL: ADD / EDIT ACCOUNT -->
   <div id="accountModal" class="modal-overlay hidden">
     <div class="modal-card">
       <div class="modal-header">
@@ -748,11 +787,11 @@
         <div class="type-selector">
           <label class="type-btn pay active">
             <input type="radio" name="accType" value="pay" checked onchange="app.toggleTypeUI()">
-            <i data-lucide="arrow-down-circle"></i> Conta a Pagar
+            <i data-lucide="arrow-down-circle"></i> Conta a Pagar (Despesa)
           </label>
           <label class="type-btn receive">
             <input type="radio" name="accType" value="receive" onchange="app.toggleTypeUI()">
-            <i data-lucide="arrow-up-circle"></i> Conta a Receber
+            <i data-lucide="arrow-up-circle"></i> Conta a Receber (Receita / Salário)
           </label>
         </div>
 
@@ -787,7 +826,7 @@
             <input type="text" id="accPixKey" placeholder="CPF, Celular, E-mail ou Aleatória">
           </div>
 
-          <!-- Valor (R$) - Dinâmico: Valor da Conta OU Valor de Cada Parcela -->
+          <!-- Valor (R$) -->
           <div class="form-group col-6">
             <label for="accAmount" id="labelAccAmount">Valor da Conta (R$) *</label>
             <input type="number" step="0.01" id="accAmount" placeholder="0,00" required oninput="app.updateInstallmentPreview()">
@@ -795,7 +834,7 @@
 
           <!-- Data de Vencimento / 1ª Parcela -->
           <div class="form-group col-6">
-            <label for="accDueDate" id="labelAccDueDate">Data do 1º Vencimento *</label>
+            <label for="accDueDate" id="labelAccDueDate">Data do Vencimento *</label>
             <input type="date" id="accDueDate" required>
           </div>
 
@@ -803,16 +842,7 @@
           <div class="form-group col-6">
             <label for="accCategory">Categoria</label>
             <select id="accCategory">
-              <option value="Cartão de Terceiros">💳 Cartão de Terceiros</option>
-              <option value="Pet / Ração">🐱 Pet / Ração de Animais</option>
-              <option value="Moradia">🏠 Moradia (Aluguel, Luz, Água)</option>
-              <option value="Alimentação">🛒 Alimentação / Mercado / Lanches</option>
-              <option value="Transporte">🚗 Transporte / Combustível</option>
-              <option value="Saúde">⚕️ Saúde & Farmácia</option>
-              <option value="Lazer">🎉 Lazer & Entretenimento</option>
-              <option value="Educação">📚 Educação & Cursos</option>
-              <option value="Salário/Renda">💰 Salário / Renda / Vendas</option>
-              <option value="Outros">📌 Outros</option>
+              <!-- Rendered dynamically according to type -->
             </select>
           </div>
 
@@ -825,7 +855,7 @@
             </select>
           </div>
 
-          <!-- Parcelamento (Installments por Valor da Parcela) -->
+          <!-- Parcelamento (Installments) -->
           <div class="form-group col-12 installment-box" id="installmentBox">
             <div class="checkbox-row">
               <input type="checkbox" id="accIsInstallment" onchange="app.toggleInstallmentOptions()">
@@ -977,7 +1007,7 @@
 
         <div class="backup-section highlight-box">
           <h3>🧹 Zerar Contas de Teste</h3>
-          <p>Apague as contas de teste e deixe seu aplicativo zerado e limpo para colocar suas contas verdadeiras.</p>
+          <p>Apague todas as contas de teste e deixe seu aplicativo zerado e limpo para colocar suas contas verdadeiras.</p>
           <button onclick="app.clearDemoAccountsPrompt()" class="btn-danger-sm" style="font-size:0.95rem; padding:10px 16px;"><i data-lucide="trash-2"></i> Zerar Contas de Teste</button>
         </div>
 

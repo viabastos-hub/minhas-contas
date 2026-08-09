@@ -1,6 +1,6 @@
 /* ==========================================================================
    MINHAS CONTAS - BULLETPROOF DATA PRESERVATION & SYNC ENGINE
-   INCLUDES: GASTOS RÁPIDOS + SALÁRIO & ADIANTAMENTO DASHBOARD MILESTONES
+   INCLUDES: ABA DE ENTRADAS & SALÁRIO + CORREÇÃO DEFINITIVA DE EXCLUSÃO
    ========================================================================== */
 
 class AccountsApp {
@@ -42,27 +42,12 @@ class AccountsApp {
     this.initTheme();
     this.initPwa();
     this.populateReportSelectors();
-    this.autoMigrateLegacyData();
     this.checkCpfAuth();
   }
 
   /* ------------------------------------------------------------------------
-     1. BULLETPROOF DATA PRESERVATION & MIGRATION
+     1. BULLETPROOF DATA PRESERVATION & RESTORE
      ------------------------------------------------------------------------ */
-  autoMigrateLegacyData() {
-    try {
-      const legacyRaw = localStorage.getItem('minhas_contas_app_data_v2');
-      if (legacyRaw) {
-        const legacyAccounts = JSON.parse(legacyRaw);
-        if (Array.isArray(legacyAccounts) && legacyAccounts.length > 0) {
-          localStorage.setItem('minhas_contas_legacy_backup', legacyRaw);
-        }
-      }
-    } catch (e) {
-      console.log('Legacy scan check completed.');
-    }
-  }
-
   emergencyScanAndRestore() {
     let recoveredAccounts = [];
 
@@ -88,7 +73,7 @@ class AccountsApp {
             });
           }
         } catch (e) {
-          // ignore non-JSON
+          // ignore
         }
       }
     }
@@ -178,7 +163,7 @@ class AccountsApp {
     let user = rawLocal ? JSON.parse(rawLocal) : null;
 
     const rawAccounts = localStorage.getItem(`minhas_contas_cpf_${cleanCpf}_accounts`);
-    if (!user && rawAccounts) {
+    if (!user && rawAccounts !== null) {
       user = { cpf: cleanCpf, name: 'Titular', phone: '', email: '', password: '123' };
       this.saveLocalUserData(user);
     }
@@ -191,21 +176,18 @@ class AccountsApp {
           user = cloudData.user;
           this.saveLocalUserData(user);
 
-          if (cloudData.accounts && Array.isArray(cloudData.accounts) && cloudData.accounts.length > 0) {
-            const localAccs = localStorage.getItem(`minhas_contas_cpf_${cleanCpf}_accounts`);
-            if (!localAccs || localAccs === '[]') {
-              localStorage.setItem(`minhas_contas_cpf_${cleanCpf}_accounts`, JSON.stringify(cloudData.accounts));
-            }
+          // Only sync cloud accounts if local is brand new (null), NOT if user has deliberately deleted them!
+          const localAccsRaw = localStorage.getItem(`minhas_contas_cpf_${cleanCpf}_accounts`);
+          if (localAccsRaw === null && cloudData.accounts && Array.isArray(cloudData.accounts)) {
+            localStorage.setItem(`minhas_contas_cpf_${cleanCpf}_accounts`, JSON.stringify(cloudData.accounts));
           }
 
-          if (cloudData.profiles && Array.isArray(cloudData.profiles) && cloudData.profiles.length > 0) {
-            const localProfs = localStorage.getItem(`minhas_contas_cpf_${cleanCpf}_profiles`);
-            if (!localProfs || localProfs === '[]') {
-              localStorage.setItem(`minhas_contas_cpf_${cleanCpf}_profiles`, JSON.stringify(cloudData.profiles));
-            }
+          const localProfsRaw = localStorage.getItem(`minhas_contas_cpf_${cleanCpf}_profiles`);
+          if (localProfsRaw === null && cloudData.profiles && Array.isArray(cloudData.profiles)) {
+            localStorage.setItem(`minhas_contas_cpf_${cleanCpf}_profiles`, JSON.stringify(cloudData.profiles));
           }
 
-          if (cloudData.budgetGoal) {
+          if (cloudData.budgetGoal && localStorage.getItem(`minhas_contas_cpf_${cleanCpf}_budget_goal`) === null) {
             localStorage.setItem(`minhas_contas_cpf_${cleanCpf}_budget_goal`, cloudData.budgetGoal.toString());
           }
         }
@@ -271,7 +253,7 @@ class AccountsApp {
 
     if (!user) {
       const rawAccounts = localStorage.getItem(`minhas_contas_cpf_${cleanCpf}_accounts`);
-      if (rawAccounts) {
+      if (rawAccounts !== null) {
         user = { cpf: cleanCpf, name: 'Titular', phone: '', email: '', password: pass || '1234' };
         this.saveLocalUserData(user);
       } else {
@@ -326,21 +308,17 @@ class AccountsApp {
     this.activeCpf = cleanCpf;
     this.activeUser = user;
 
-    // PRESERVE EXISTING ACCOUNTS
+    // PRESERVE EXISTING ACCOUNTS (Never overwrite if key exists)
     const existingRawAccounts = localStorage.getItem(`minhas_contas_cpf_${cleanCpf}_accounts`);
-    const legacyRaw = localStorage.getItem('minhas_contas_app_data_v2');
-
-    if (existingRawAccounts && existingRawAccounts !== '[]') {
+    if (existingRawAccounts !== null) {
       try { this.accounts = JSON.parse(existingRawAccounts); } catch(e) { this.accounts = []; }
-    } else if (legacyRaw && legacyRaw !== '[]') {
-      try { this.accounts = JSON.parse(legacyRaw); } catch(e) { this.accounts = this.getSampleData(); }
     } else {
       this.accounts = this.getSampleData();
     }
 
     // PRESERVE EXISTING PROFILES
     const existingRawProfiles = localStorage.getItem(`minhas_contas_cpf_${cleanCpf}_profiles`);
-    if (existingRawProfiles && existingRawProfiles !== '[]') {
+    if (existingRawProfiles !== null) {
       try { this.profiles = JSON.parse(existingRawProfiles); } catch(e) { this.profiles = [{ id: 'p_titular', name: `Meu Perfil (${name})` }]; }
     } else {
       this.profiles = [{ id: 'p_titular', name: `Meu Perfil (${name})` }];
@@ -644,7 +622,100 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     5. DATA STORAGE & PROFILES
+     5. DEDICATED TAB: ENTRADAS & SALÁRIO
+     ------------------------------------------------------------------------ */
+  renderIncomeTab() {
+    const curYear = this.selectedDate.getFullYear();
+    const curMonth = this.selectedDate.getMonth();
+    const activeAccounts = this.getFilteredAccountsByActiveProfile();
+
+    const incomeList = activeAccounts.filter(a => {
+      const d = new Date(a.dueDate + 'T00:00:00');
+      return a.type === 'receive' && d.getFullYear() === curYear && d.getMonth() === curMonth;
+    });
+
+    incomeList.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+
+    let totalExpected = 0;
+    let totalReceived = 0;
+
+    incomeList.forEach(a => {
+      totalExpected += a.amount;
+      if (a.status === 'paid') totalReceived += a.amount;
+    });
+
+    const totalDisplay = document.getElementById('incomeMonthTotal');
+    const receivedDisplay = document.getElementById('incomeMonthReceived');
+    if (totalDisplay) totalDisplay.textContent = this.formatCurrency(totalExpected);
+    if (receivedDisplay) receivedDisplay.textContent = this.formatCurrency(totalReceived);
+
+    const container = document.getElementById('incomeAccountsList');
+    if (!container) return;
+
+    if (incomeList.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state" style="text-align:center; padding: 40px; color: var(--text-muted);">
+          <i data-lucide="wallet-cards" style="width:48px; height:48px; opacity:0.5; color:#10b981; margin-bottom:12px;"></i>
+          <p>Nenhuma entrada cadastrada para este mês ainda.</p>
+          <button class="btn-add-income-quick" onclick="app.openNewIncomeModal('Salário')" style="margin-top:14px; background:var(--primary-color); color:#fff; padding:10px 20px;">
+            <i data-lucide="plus"></i> Cadastrar Meu Salário / Vale
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = incomeList.map(a => {
+      const memberName = this.getProfileNameById(a.profileId);
+      const isPaid = a.status === 'paid';
+
+      return `
+        <div class="account-card ${isPaid ? 'status-paid' : ''}">
+          <div class="type-indicator receive">
+            <i data-lucide="arrow-up-right"></i>
+          </div>
+
+          <div class="account-info">
+            <div class="account-title-row">
+              <span class="account-title">${this.escapeHtml(a.title)}</span>
+              ${this.activeProfileId === 'all' ? `<span class="badge-tag badge-member"><i data-lucide="user" style="width:10px"></i> ${this.escapeHtml(memberName)}</span>` : ''}
+              <span class="badge-tag" style="background:var(--primary-light); color:var(--primary-color)">${this.escapeHtml(a.category)}</span>
+              ${a.person ? `<span class="badge-tag badge-person"><i data-lucide="user" style="width:10px"></i> ${this.escapeHtml(a.person)}</span>` : ''}
+            </div>
+
+            <div class="account-meta">
+              <span><i data-lucide="calendar" style="width:12px"></i> ${isPaid ? 'Recebido em' : 'Previsão de Recebimento'}: ${this.formatDate(a.dueDate)}</span>
+              ${a.notes ? `<span><i data-lucide="file-text" style="width:12px"></i> ${this.escapeHtml(a.notes)}</span>` : ''}
+            </div>
+          </div>
+
+          <div class="account-values">
+            <div class="account-amount receive">+${this.formatCurrency(a.amount)}</div>
+            <span class="account-status-badge ${isPaid ? 'status-badge-paid' : 'status-badge-pending'}">
+              ${isPaid ? '🟢 Recebido na Conta' : '🟡 A Receber'}
+            </span>
+          </div>
+
+          <div class="account-actions">
+            <button class="icon-btn-sm" onclick="app.toggleStatus('${a.id}')" title="${isPaid ? 'Marcar como A Receber' : 'Marcar como Recebido'}">
+              <i data-lucide="${isPaid ? 'rotate-ccw' : 'check'}"></i>
+            </button>
+
+            <button class="icon-btn-sm" onclick="app.editAccount('${a.id}')" title="Editar">
+              <i data-lucide="pencil"></i>
+            </button>
+
+            <button class="icon-btn-sm" onclick="app.deleteAccount('${a.id}')" title="Excluir" style="color:var(--danger-color)">
+              <i data-lucide="trash-2"></i>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  /* ------------------------------------------------------------------------
+     6. DATA STORAGE & PROFILES (WITH DEFINITIVE DELETION SUPPORT)
      ------------------------------------------------------------------------ */
   getCpfStorageKey(subKey) {
     return `minhas_contas_cpf_${this.activeCpf}_${subKey}`;
@@ -655,7 +726,7 @@ class AccountsApp {
 
     // Load Profiles
     const rawProfiles = localStorage.getItem(this.getCpfStorageKey('profiles'));
-    if (rawProfiles) {
+    if (rawProfiles !== null) {
       try { this.profiles = JSON.parse(rawProfiles); } catch(e) { this.profiles = []; }
     }
     if (!this.profiles || this.profiles.length === 0) {
@@ -674,23 +745,16 @@ class AccountsApp {
     const savedBudget = localStorage.getItem(this.getCpfStorageKey('budget_goal'));
     this.budgetGoal = savedBudget ? parseFloat(savedBudget) : 3000;
 
-    // Accounts
+    // Accounts: If key exists (even if empty []), USE IT!
     const rawAccounts = localStorage.getItem(this.getCpfStorageKey('accounts'));
-    const vaultRaw = localStorage.getItem(`minhas_contas_permanent_vault_${this.activeCpf}`);
-    const legacyRaw = localStorage.getItem('minhas_contas_app_data_v2');
-
-    if (rawAccounts && rawAccounts !== '[]') {
-      try { this.accounts = JSON.parse(rawAccounts); } catch(e) { this.accounts = []; }
-    } else if (vaultRaw && vaultRaw !== '[]') {
-      try { this.accounts = JSON.parse(vaultRaw); } catch(e) {}
-    } else if (legacyRaw && legacyRaw !== '[]') {
+    if (rawAccounts !== null) {
       try { 
-        this.accounts = JSON.parse(legacyRaw);
-        this.saveCpfAccounts();
+        this.accounts = JSON.parse(rawAccounts); 
       } catch(e) { 
-        this.accounts = this.getSampleData(); 
+        this.accounts = []; 
       }
     } else {
+      // First time initialization for brand new CPF
       this.accounts = this.getSampleData();
       this.saveCpfAccounts();
     }
@@ -707,7 +771,6 @@ class AccountsApp {
   saveCpfAccounts() {
     if (!this.activeCpf) return;
     localStorage.setItem(this.getCpfStorageKey('accounts'), JSON.stringify(this.accounts));
-    localStorage.setItem(`minhas_contas_permanent_vault_${this.activeCpf}`, JSON.stringify(this.accounts));
     this.rebuildPixMap();
     this.syncFullDataToCloud();
   }
@@ -809,7 +872,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     6. PROFILE & MEMBER MANAGEMENT
+     7. PROFILE & MEMBER MANAGEMENT
      ------------------------------------------------------------------------ */
   switchUserProfile(profileId) {
     this.activeProfileId = profileId;
@@ -909,17 +972,17 @@ class AccountsApp {
   }
 
   clearDemoAccountsPrompt() {
-    if (confirm('Deseja zerar todas as contas deste CPF e iniciar com a sua lista 100% limpa?')) {
+    if (confirm('Deseja apagar todas as contas deste CPF e iniciar com a sua lista 100% limpa?')) {
       this.accounts = [];
       this.saveCpfAccounts();
       this.render();
       this.closeModal('backupModal');
-      this.showToast('Contas zeradas! Agora você pode cadastrar suas contas reais.');
+      this.showToast('Contas apagadas! Seu aplicativo está 100% zerado e limpo.');
     }
   }
 
   /* ------------------------------------------------------------------------
-     7. SMART BUDGET GOAL
+     8. SMART BUDGET GOAL
      ------------------------------------------------------------------------ */
   editBudgetGoalPrompt() {
     const current = this.budgetGoal;
@@ -934,7 +997,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     8. THEME & PWA
+     9. THEME & PWA
      ------------------------------------------------------------------------ */
   initTheme() {
     const savedTheme = localStorage.getItem(this.THEME_KEY) || 'dark';
@@ -992,7 +1055,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     9. NAVIGATION & RENDER PIPELINE
+     10. NAVIGATION & RENDER PIPELINE
      ------------------------------------------------------------------------ */
   switchTab(tabId) {
     this.currentTab = tabId;
@@ -1031,6 +1094,8 @@ class AccountsApp {
 
     if (this.currentTab === 'dashboard') {
       this.renderDashboard();
+    } else if (this.currentTab === 'income') {
+      this.renderIncomeTab();
     } else if (this.currentTab === 'list') {
       this.renderList();
     } else if (this.currentTab === 'quick-expenses') {
@@ -1112,7 +1177,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     10. DASHBOARD RENDERER (INCLUDES SALÁRIO & ADIANTAMENTO PANEL)
+     11. DASHBOARD RENDERER (INCLUDES SALÁRIO & ADIANTAMENTO PANEL)
      ------------------------------------------------------------------------ */
   renderDashboard() {
     const curYear = this.selectedDate.getFullYear();
@@ -1407,7 +1472,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     11. LIST TAB RENDERER
+     12. LIST TAB RENDERER
      ------------------------------------------------------------------------ */
   renderList() {
     const search = document.getElementById('searchInput')?.value.toLowerCase() || '';
@@ -1544,7 +1609,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     12. REPORTS TAB ENGINE
+     13. REPORTS TAB ENGINE
      ------------------------------------------------------------------------ */
   populateReportSelectors() {
     const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
@@ -1869,7 +1934,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     13. CALENDAR TAB RENDERER
+     14. CALENDAR TAB RENDERER
      ------------------------------------------------------------------------ */
   renderCalendar() {
     const year = this.calendarDate.getFullYear();
@@ -1945,7 +2010,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     14. BY PERSON VIEW & CHAVE PIX REGISTRY
+     15. BY PERSON VIEW & CHAVE PIX REGISTRY
      ------------------------------------------------------------------------ */
   renderPeople() {
     const grid = document.getElementById('peopleCardsGrid');
@@ -2050,7 +2115,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     15. CRUD OPERATIONS (ADD / EDIT ACCOUNTS WITH PER-PARCEL LOGIC)
+     16. CRUD OPERATIONS (ADD / EDIT ACCOUNTS WITH PER-PARCEL LOGIC)
      ------------------------------------------------------------------------ */
   openNewModal() {
     document.getElementById('accId').value = '';
@@ -2286,12 +2351,12 @@ class AccountsApp {
       this.accounts = this.accounts.filter(a => a.id !== id);
       this.saveCpfAccounts();
       this.render();
-      this.showToast('Lançamento excluído.');
+      this.showToast('Lançamento excluído com sucesso.');
     }
   }
 
   /* ------------------------------------------------------------------------
-     16. WHATSAPP MESSAGE GENERATOR & REPORTS
+     17. WHATSAPP MESSAGE GENERATOR & REPORTS
      ------------------------------------------------------------------------ */
   openWhatsappModal(id) {
     const acc = this.accounts.find(a => a.id === id);
@@ -2335,7 +2400,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     17. BACKUP & RESTORE JSON
+     18. BACKUP & RESTORE JSON
      ------------------------------------------------------------------------ */
   exportDataJSON() {
     const exportPayload = {
@@ -2398,7 +2463,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     18. UTILS & TOASTS
+     19. UTILS & TOASTS
      ------------------------------------------------------------------------ */
   openModal(modalId) {
     if (modalId === 'membersModal') {
