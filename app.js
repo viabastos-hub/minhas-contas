@@ -64,9 +64,7 @@ class AccountsApp {
 
   emergencyScanAndRestore() {
     let recoveredAccounts = [];
-    let recoveredProfiles = [];
 
-    // Scan all keys in localStorage
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (key && key.startsWith('minhas_contas_')) {
@@ -76,7 +74,6 @@ class AccountsApp {
 
           const parsed = JSON.parse(val);
           if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].title && parsed[0].amount !== undefined) {
-            // Found account list
             parsed.forEach(acc => {
               if (!recoveredAccounts.some(x => x.id === acc.id || (x.title === acc.title && x.dueDate === acc.dueDate && x.amount === acc.amount))) {
                 recoveredAccounts.push(acc);
@@ -90,7 +87,7 @@ class AccountsApp {
             });
           }
         } catch (e) {
-          // ignore non-JSON keys
+          // ignore non-JSON
         }
       }
     }
@@ -328,7 +325,7 @@ class AccountsApp {
     this.activeCpf = cleanCpf;
     this.activeUser = user;
 
-    // PRESERVE EXISTING ACCOUNTS: NEVER OVERWRITE WITH SAMPLE DATA IF USER ALREADY HAS DATA!
+    // PRESERVE EXISTING ACCOUNTS
     const existingRawAccounts = localStorage.getItem(`minhas_contas_cpf_${cleanCpf}_accounts`);
     const legacyRaw = localStorage.getItem('minhas_contas_app_data_v2');
 
@@ -646,7 +643,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     5. DATA STORAGE & PROFILES (PERMANENT RETENTION)
+     5. DATA STORAGE & PROFILES
      ------------------------------------------------------------------------ */
   getCpfStorageKey(subKey) {
     return `minhas_contas_cpf_${this.activeCpf}_${subKey}`;
@@ -676,7 +673,7 @@ class AccountsApp {
     const savedBudget = localStorage.getItem(this.getCpfStorageKey('budget_goal'));
     this.budgetGoal = savedBudget ? parseFloat(savedBudget) : 3000;
 
-    // Accounts: Load existing or retrieve legacy/backup
+    // Accounts
     const rawAccounts = localStorage.getItem(this.getCpfStorageKey('accounts'));
     const vaultRaw = localStorage.getItem(`minhas_contas_permanent_vault_${this.activeCpf}`);
     const legacyRaw = localStorage.getItem('minhas_contas_app_data_v2');
@@ -1168,7 +1165,7 @@ class AccountsApp {
       budgetRemInfo.style.color = remaining >= 0 ? 'var(--text-muted)' : 'var(--danger-color)';
     }
 
-    // Render Family Summary Grid (when in 'all' view)
+    // Render Family Summary Grid
     const famSummary = document.getElementById('familyMembersSummary');
     const famGrid = document.getElementById('familyMembersGrid');
     if (famSummary && famGrid) {
@@ -1932,7 +1929,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     15. CRUD OPERATIONS (ADD / EDIT ACCOUNTS)
+     15. CRUD OPERATIONS (ADD / EDIT ACCOUNTS WITH PER-PARCEL LOGIC)
      ------------------------------------------------------------------------ */
   openNewModal() {
     document.getElementById('accId').value = '';
@@ -1999,29 +1996,50 @@ class AccountsApp {
     payBtn?.classList.toggle('active', selectedType === 'pay');
     receiveBtn?.classList.toggle('active', selectedType === 'receive');
 
+    const isInstallment = document.getElementById('accIsInstallment')?.checked;
     const personLabel = document.getElementById('labelAccPerson');
     const installmentLabel = document.getElementById('labelAccInstallment');
     const titleLabel = document.getElementById('labelAccTitle');
     const dueDateLabel = document.getElementById('labelAccDueDate');
+    const amountLabel = document.getElementById('labelAccAmount');
 
     if (selectedType === 'receive') {
       if (titleLabel) titleLabel.textContent = 'Descrição do Valor a Receber (ex: Serviço, Freela, Venda) *';
       if (personLabel) personLabel.innerHTML = '<i data-lucide="user"></i> De quem vou receber? / Nome da Pessoa *';
-      if (dueDateLabel) dueDateLabel.textContent = 'Data em que vou receber *';
-      if (installmentLabel) installmentLabel.innerHTML = '<strong>Este valor será recebido em parcelas? (ex: 3x, 6x)</strong>';
+      if (dueDateLabel) dueDateLabel.textContent = isInstallment ? 'Data do 1º Recebimento *' : 'Data em que vou receber *';
+      if (installmentLabel) installmentLabel.innerHTML = '<strong>Este valor será recebido em parcelas? (ex: 6x de R$ 50)</strong>';
+      if (amountLabel) amountLabel.textContent = isInstallment ? 'Valor de CADA Parcela a Receber (R$) *' : 'Valor a Receber (R$) *';
     } else {
       if (titleLabel) titleLabel.textContent = 'Descrição da Conta a Pagar (ex: Mercado, Cartão) *';
       if (personLabel) personLabel.innerHTML = '<i data-lucide="user"></i> Para quem devo pagar? *';
-      if (dueDateLabel) dueDateLabel.textContent = 'Data de Vencimento *';
-      if (installmentLabel) installmentLabel.innerHTML = '<strong>Esta compra foi parcelada? (ex: 6x no cartão)</strong>';
+      if (dueDateLabel) dueDateLabel.textContent = isInstallment ? 'Data do 1º Vencimento *' : 'Data de Vencimento *';
+      if (installmentLabel) installmentLabel.innerHTML = '<strong>Esta compra é parcelada? (ex: 6x de R$ 50)</strong>';
+      if (amountLabel) amountLabel.textContent = isInstallment ? 'Valor de CADA Parcela (R$) *' : 'Valor da Conta (R$) *';
     }
 
     if (window.lucide) lucide.createIcons();
+    this.updateInstallmentPreview();
   }
 
   toggleInstallmentOptions() {
     const isChecked = document.getElementById('accIsInstallment').checked;
     document.getElementById('installmentOptions').classList.toggle('hidden', !isChecked);
+    this.toggleTypeUI();
+  }
+
+  updateInstallmentPreview() {
+    const isChecked = document.getElementById('accIsInstallment')?.checked;
+    const previewBox = document.getElementById('installmentLiveSummary');
+    if (!isChecked || !previewBox) return;
+
+    const amount = parseFloat(document.getElementById('accAmount')?.value) || 0;
+    const count = parseInt(document.getElementById('accInstallmentCount')?.value) || 2;
+    const total = amount * count;
+
+    previewBox.innerHTML = `
+      ⚡ O app vai replicar <strong>${count} parcelas</strong> no valor de <strong>${this.formatCurrency(amount)}</strong> nos próximos ${count} meses.<br>
+      <span style="font-size:0.8rem; color:var(--text-muted);">(Total acumulado: ${this.formatCurrency(total)})</span>
+    `;
   }
 
   saveAccount(e) {
@@ -2057,7 +2075,7 @@ class AccountsApp {
       }
     } else {
       if (isInstallment && installmentCount > 1) {
-        const installmentAmount = amount / installmentCount;
+        // PER-PARCEL REPLICATION: Use exact typed amount for each month!
         const baseDate = new Date(dueDate + 'T00:00:00');
 
         for (let i = 1; i <= installmentCount; i++) {
@@ -2066,12 +2084,12 @@ class AccountsApp {
           const instDateStr = instDate.toISOString().split('T')[0];
 
           this.accounts.push({
-            id: Date.now().toString() + i,
+            id: 'parc_' + Date.now().toString() + '_' + i,
             profileId,
             title: `${title} (${i}/${installmentCount})`,
             person,
             pixKey,
-            amount: parseFloat(installmentAmount.toFixed(2)),
+            amount: parseFloat(amount.toFixed(2)), // EXACT PER-PARCEL VALUE
             dueDate: instDateStr,
             category,
             status: i === 1 ? status : 'pending',
@@ -2079,7 +2097,7 @@ class AccountsApp {
             type
           });
         }
-        this.showToast(`${installmentCount} parcelas geradas com sucesso!`);
+        this.showToast(`${installmentCount} parcelas de ${this.formatCurrency(amount)} criadas com sucesso!`);
       } else {
         this.accounts.push({
           id: Date.now().toString(),

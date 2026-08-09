@@ -162,7 +162,7 @@
         </div>
       </form>
 
-      <!-- 3. IN-APP PASSWORD RESET FORM (100% DIRETO NA TELA SEM ABRIR OUTROS APPS) -->
+      <!-- 3. IN-APP PASSWORD RESET FORM -->
       <form id="forgotForm" onsubmit="app.handleDirectPasswordReset(event)" class="login-form hidden">
         <div class="form-group">
           <label for="forgotCpfInput"><i data-lucide="fingerprint"></i> Seu CPF cadastrado:</label>
@@ -256,7 +256,7 @@
             </span>
           </div>
 
-          <!-- Multi-Profile / Multi-Member Switcher (e.g. Vivian, Esposa, Esposo, Família) -->
+          <!-- Multi-Profile / Multi-Member Switcher -->
           <div class="profile-switcher">
             <i data-lucide="users" style="width:14px; height:14px; color:var(--primary-color)"></i>
             <select id="userProfileSelect" onchange="app.switchUserProfile(this.value)">
@@ -523,7 +523,7 @@
       </div>
     </section>
 
-    <!-- TAB 3: GASTOS RÁPIDOS DO DIA A DIA (MICRO-GASTOS À VISTA) -->
+    <!-- TAB 3: GASTOS RÁPIDOS DO DIA A DIA -->
     <section id="tab-quick-expenses" class="tab-content">
       <div class="quick-expenses-header">
         <div>
@@ -551,7 +551,7 @@
       </div>
     </section>
 
-    <!-- TAB 4: RELATÓRIOS (MENSAL E POR GASTOS/CATEGORIAS) -->
+    <!-- TAB 4: RELATÓRIOS -->
     <section id="tab-reports" class="tab-content">
       <div class="reports-header-panel">
         <div class="reports-header-info">
@@ -595,7 +595,7 @@
         </div>
       </div>
 
-      <!-- Report Paper Sheet (Print Friendly) -->
+      <!-- Report Paper Sheet -->
       <div id="reportSheetContainer" class="report-sheet-container">
         <!-- Dynamically generated report document -->
       </div>
@@ -659,7 +659,6 @@
 
       <form id="quickExpenseForm" onsubmit="app.saveQuickExpense(event)">
         <div class="modal-body" style="display:flex; flex-direction:column; gap:14px;">
-          <!-- Valor Rápido -->
           <div class="form-group">
             <label for="quickAmount"><i data-lucide="dollar-sign"></i> Quanto você gastou? (R$) *</label>
             <input 
@@ -672,7 +671,6 @@
             >
           </div>
 
-          <!-- Descrição Rápida -->
           <div class="form-group">
             <label for="quickTitle"><i data-lucide="tag"></i> O que foi comprado? *</label>
             <input 
@@ -683,7 +681,6 @@
             >
           </div>
 
-          <!-- Categoria -->
           <div class="form-group">
             <label for="quickCategory"><i data-lucide="folder"></i> Categoria:</label>
             <select id="quickCategory">
@@ -697,7 +694,6 @@
             </select>
           </div>
 
-          <!-- Forma de Pagamento -->
           <div class="form-group">
             <label for="quickPaymentMethod"><i data-lucide="credit-card"></i> Como foi pago?</label>
             <select id="quickPaymentMethod">
@@ -708,7 +704,6 @@
             </select>
           </div>
 
-          <!-- Membro que gastou -->
           <div class="form-group">
             <label for="quickMember"><i data-lucide="user"></i> Quem realizou o gasto?</label>
             <select id="quickMember">
@@ -725,7 +720,7 @@
     </div>
   </div>
 
-  <!-- MODAL: ADD / EDIT ACCOUNT -->
+  <!-- MODAL: ADD / EDIT ACCOUNT (COM PARCELAMENTO DIRETO POR VALOR DA PARCELA) -->
   <div id="accountModal" class="modal-overlay hidden">
     <div class="modal-card">
       <div class="modal-header">
@@ -736,7 +731,7 @@
       <form id="accountForm" onsubmit="app.saveAccount(event)">
         <input type="hidden" id="accId">
 
-        <!-- Member / Profile Selection (Who owns this bill?) -->
+        <!-- Member / Profile Selection -->
         <div class="form-group col-12" id="memberSelectGroup">
           <label for="accMember"><i data-lucide="user-check"></i> Pertence a qual Usuário / Membro? *</label>
           <select id="accMember" required>
@@ -780,15 +775,15 @@
             <input type="text" id="accPixKey" placeholder="CPF, Celular, E-mail ou Aleatória">
           </div>
 
-          <!-- Valor (R$) -->
+          <!-- Valor (R$) - Dinâmico: Valor da Conta OU Valor de Cada Parcela -->
           <div class="form-group col-6">
-            <label for="accAmount" id="labelAccAmount">Valor (R$) *</label>
-            <input type="number" step="0.01" id="accAmount" placeholder="0,00" required>
+            <label for="accAmount" id="labelAccAmount">Valor da Conta (R$) *</label>
+            <input type="number" step="0.01" id="accAmount" placeholder="0,00" required oninput="app.updateInstallmentPreview()">
           </div>
 
-          <!-- Data de Vencimento / Recebimento -->
+          <!-- Data de Vencimento / 1ª Parcela -->
           <div class="form-group col-6">
-            <label for="accDueDate" id="labelAccDueDate">Data de Vencimento *</label>
+            <label for="accDueDate" id="labelAccDueDate">Data do 1º Vencimento *</label>
             <input type="date" id="accDueDate" required>
           </div>
 
@@ -818,18 +813,23 @@
             </select>
           </div>
 
-          <!-- Parcelamento (Installments) -->
+          <!-- Parcelamento (Installments por Valor da Parcela) -->
           <div class="form-group col-12 installment-box" id="installmentBox">
             <div class="checkbox-row">
               <input type="checkbox" id="accIsInstallment" onchange="app.toggleInstallmentOptions()">
-              <label for="accIsInstallment" id="labelAccInstallment"><strong>Esta compra foi parcelada? (ex: 6x no cartão)</strong></label>
+              <label for="accIsInstallment" id="labelAccInstallment"><strong>Esta compra é parcelada? (ex: 6x de R$ 50,00)</strong></label>
             </div>
-            <div id="installmentOptions" class="installment-options hidden">
+            <div id="installmentOptions" class="installment-options hidden" style="margin-top:10px;">
               <div class="form-group">
-                <label for="accInstallmentCount">Número de Parcelas:</label>
-                <input type="number" id="accInstallmentCount" min="2" max="60" value="2">
+                <label for="accInstallmentCount">Quantidade de Vezes / Parcelas:</label>
+                <input type="number" id="accInstallmentCount" min="2" max="60" value="2" oninput="app.updateInstallmentPreview()">
               </div>
-              <small class="help-text" id="helpAccInstallment">O app gerará automaticamente uma conta para cada mês seguinte com o valor dividido!</small>
+              
+              <!-- Live Installment Calculation Preview Box -->
+              <div id="installmentLiveSummary" class="installment-summary-pill" style="margin-top:8px; padding:10px; background:var(--bg-secondary); border:1px dashed var(--primary-color); border-radius:8px; font-size:0.88rem; color:var(--text-main);">
+                ⚡ O app vai replicar <strong>2 parcelas</strong> no valor exato de <strong>R$ 0,00</strong> nos próximos 2 meses.
+              </div>
+              <small class="help-text" id="helpAccInstallment">Não precisa calcular o valor total! Apenas coloque o valor de cada parcela e o sistema replica automaticamente nos meses seguintes.</small>
             </div>
           </div>
 
@@ -938,7 +938,6 @@
       </div>
       <div class="modal-body">
         
-        <!-- Emergency Auto-Recovery Button -->
         <div class="backup-section" style="background:var(--primary-light); border:1px solid var(--primary-color); padding:16px; border-radius:12px; margin-bottom:16px;">
           <h3 style="color:var(--primary-color); margin-bottom:4px;">🔍 Varredura de Recuperação Automática</h3>
           <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">
@@ -974,7 +973,7 @@
     </div>
   </div>
 
-  <!-- Footer for Commercial SaaS Compliance -->
+  <!-- Footer -->
   <footer class="app-footer">
     <div class="footer-content">
       <span>© 2026 Minhas Contas • Sistema Seguro de Gestão Financeira Pessoal & Familiar</span>
