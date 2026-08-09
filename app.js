@@ -1,5 +1,5 @@
 /* ==========================================================================
-   MINHAS CONTAS - COMMERCIAL SAAS ENGINE (CLOUD SYNC & DIRECT RECOVERY)
+   MINHAS CONTAS - BULLETPROOF DATA PRESERVATION & SYNC ENGINE
    ========================================================================== */
 
 class AccountsApp {
@@ -41,11 +41,74 @@ class AccountsApp {
     this.initTheme();
     this.initPwa();
     this.populateReportSelectors();
+    this.autoMigrateLegacyData();
     this.checkCpfAuth();
   }
 
   /* ------------------------------------------------------------------------
-     1. AUTH VIEWS & NAVIGATION
+     1. BULLETPROOF DATA PRESERVATION & MIGRATION
+     ------------------------------------------------------------------------ */
+  autoMigrateLegacyData() {
+    try {
+      const legacyRaw = localStorage.getItem('minhas_contas_app_data_v2');
+      if (legacyRaw) {
+        const legacyAccounts = JSON.parse(legacyRaw);
+        if (Array.isArray(legacyAccounts) && legacyAccounts.length > 0) {
+          localStorage.setItem('minhas_contas_legacy_backup', legacyRaw);
+        }
+      }
+    } catch (e) {
+      console.log('Legacy scan check completed.');
+    }
+  }
+
+  emergencyScanAndRestore() {
+    let recoveredAccounts = [];
+    let recoveredProfiles = [];
+
+    // Scan all keys in localStorage
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('minhas_contas_')) {
+        try {
+          const val = localStorage.getItem(key);
+          if (!val) continue;
+
+          const parsed = JSON.parse(val);
+          if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].title && parsed[0].amount !== undefined) {
+            // Found account list
+            parsed.forEach(acc => {
+              if (!recoveredAccounts.some(x => x.id === acc.id || (x.title === acc.title && x.dueDate === acc.dueDate && x.amount === acc.amount))) {
+                recoveredAccounts.push(acc);
+              }
+            });
+          } else if (parsed && Array.isArray(parsed.accounts)) {
+            parsed.accounts.forEach(acc => {
+              if (!recoveredAccounts.some(x => x.id === acc.id || (x.title === acc.title && x.dueDate === acc.dueDate && x.amount === acc.amount))) {
+                recoveredAccounts.push(acc);
+              }
+            });
+          }
+        } catch (e) {
+          // ignore non-JSON keys
+        }
+      }
+    }
+
+    if (recoveredAccounts.length > 0) {
+      this.accounts = recoveredAccounts;
+      this.saveCpfAccounts();
+      this.render();
+      this.closeModal('backupModal');
+      if (window.confetti) confetti({ particleCount: 60, spread: 60 });
+      alert(`🎉 Sucesso! Encontramos e restauramos ${recoveredAccounts.length} conta(s) guardadas na memória!`);
+    } else {
+      alert('Nenhuma conta anterior foi encontrada na memória deste navegador.');
+    }
+  }
+
+  /* ------------------------------------------------------------------------
+     2. AUTH VIEWS & NAVIGATION
      ------------------------------------------------------------------------ */
   showLoginView() {
     document.getElementById('loginForm')?.classList.remove('hidden');
@@ -94,7 +157,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     2. CLOUD SYNC & AUTH HANDLERS
+     3. CLOUD SYNC & BULLETPROOF AUTH
      ------------------------------------------------------------------------ */
   async checkCpfAuth() {
     const savedCpf = localStorage.getItem(this.AUTH_CPF_KEY);
@@ -116,6 +179,12 @@ class AccountsApp {
     const rawLocal = localStorage.getItem(`minhas_contas_user_${cleanCpf}`);
     let user = rawLocal ? JSON.parse(rawLocal) : null;
 
+    const rawAccounts = localStorage.getItem(`minhas_contas_cpf_${cleanCpf}_accounts`);
+    if (!user && rawAccounts) {
+      user = { cpf: cleanCpf, name: 'Titular', phone: '', email: '', password: '123' };
+      this.saveLocalUserData(user);
+    }
+
     try {
       const res = await fetch(`${this.cloudDbEndpoint}/users/${cleanCpf}.json`);
       if (res.ok) {
@@ -123,9 +192,24 @@ class AccountsApp {
         if (cloudData && cloudData.user) {
           user = cloudData.user;
           this.saveLocalUserData(user);
-          if (cloudData.accounts) localStorage.setItem(`minhas_contas_cpf_${cleanCpf}_accounts`, JSON.stringify(cloudData.accounts));
-          if (cloudData.profiles) localStorage.setItem(`minhas_contas_cpf_${cleanCpf}_profiles`, JSON.stringify(cloudData.profiles));
-          if (cloudData.budgetGoal) localStorage.setItem(`minhas_contas_cpf_${cleanCpf}_budget_goal`, cloudData.budgetGoal.toString());
+
+          if (cloudData.accounts && Array.isArray(cloudData.accounts) && cloudData.accounts.length > 0) {
+            const localAccs = localStorage.getItem(`minhas_contas_cpf_${cleanCpf}_accounts`);
+            if (!localAccs || localAccs === '[]') {
+              localStorage.setItem(`minhas_contas_cpf_${cleanCpf}_accounts`, JSON.stringify(cloudData.accounts));
+            }
+          }
+
+          if (cloudData.profiles && Array.isArray(cloudData.profiles) && cloudData.profiles.length > 0) {
+            const localProfs = localStorage.getItem(`minhas_contas_cpf_${cleanCpf}_profiles`);
+            if (!localProfs || localProfs === '[]') {
+              localStorage.setItem(`minhas_contas_cpf_${cleanCpf}_profiles`, JSON.stringify(cloudData.profiles));
+            }
+          }
+
+          if (cloudData.budgetGoal) {
+            localStorage.setItem(`minhas_contas_cpf_${cleanCpf}_budget_goal`, cloudData.budgetGoal.toString());
+          }
         }
       }
     } catch (err) {
@@ -193,7 +277,7 @@ class AccountsApp {
         user = { cpf: cleanCpf, name: 'Titular', phone: '', email: '', password: pass || '1234' };
         this.saveLocalUserData(user);
       } else {
-        if (confirm('Nenhum cadastro encontrado com este CPF na nuvem. Deseja criar sua conta agora?')) {
+        if (confirm('Nenhum cadastro encontrado com este CPF. Deseja criar sua conta agora?')) {
           this.showRegisterView();
         }
         if (btnSubmit) { btnSubmit.disabled = false; btnSubmit.innerHTML = '<i data-lucide="log-in"></i> Entrar no Aplicativo'; }
@@ -203,7 +287,7 @@ class AccountsApp {
     }
 
     if (user.password && user.password !== pass) {
-      alert('Senha incorreta! Se você esqueceu, clique em "Esqueci a senha" abaixo.');
+      alert('Senha incorreta! Se você esqueceu, clique em "Esqueci a senha" abaixo para redefinir na hora.');
       if (btnSubmit) { btnSubmit.disabled = false; btnSubmit.innerHTML = '<i data-lucide="log-in"></i> Entrar no Aplicativo'; }
       if (window.lucide) lucide.createIcons();
       return;
@@ -244,20 +328,34 @@ class AccountsApp {
     this.activeCpf = cleanCpf;
     this.activeUser = user;
 
-    this.profiles = [{ id: 'p_titular', name: `Meu Perfil (${name})` }];
-    this.accounts = this.getSampleData();
+    // PRESERVE EXISTING ACCOUNTS: NEVER OVERWRITE WITH SAMPLE DATA IF USER ALREADY HAS DATA!
+    const existingRawAccounts = localStorage.getItem(`minhas_contas_cpf_${cleanCpf}_accounts`);
+    const legacyRaw = localStorage.getItem('minhas_contas_app_data_v2');
+
+    if (existingRawAccounts && existingRawAccounts !== '[]') {
+      try { this.accounts = JSON.parse(existingRawAccounts); } catch(e) { this.accounts = []; }
+    } else if (legacyRaw && legacyRaw !== '[]') {
+      try { this.accounts = JSON.parse(legacyRaw); } catch(e) { this.accounts = this.getSampleData(); }
+    } else {
+      this.accounts = this.getSampleData();
+    }
+
+    // PRESERVE EXISTING PROFILES
+    const existingRawProfiles = localStorage.getItem(`minhas_contas_cpf_${cleanCpf}_profiles`);
+    if (existingRawProfiles && existingRawProfiles !== '[]') {
+      try { this.profiles = JSON.parse(existingRawProfiles); } catch(e) { this.profiles = [{ id: 'p_titular', name: `Meu Perfil (${name})` }]; }
+    } else {
+      this.profiles = [{ id: 'p_titular', name: `Meu Perfil (${name})` }];
+    }
+
     this.saveCpfProfiles();
     this.saveCpfAccounts();
-
     await this.syncFullDataToCloud();
 
     this.loginSuccess(user, true);
-    this.showToast(`Cadastro concluído na nuvem! Bem-vindo(a), ${name}!`);
+    this.showToast(`Conta ativada com sucesso! Bem-vindo(a), ${name}!`);
   }
 
-  /* ------------------------------------------------------------------------
-     3. 100% IN-APP PASSWORD RESET (SEM ABRIR OUTROS PROGRAMAS)
-     ------------------------------------------------------------------------ */
   async handleDirectPasswordReset(e) {
     e.preventDefault();
     const btnSubmit = document.getElementById('btnForgotSubmit');
@@ -290,35 +388,31 @@ class AccountsApp {
       return;
     }
 
-    const user = await this.fetchUserDataByCpf(cleanCpf);
+    let user = await this.fetchUserDataByCpf(cleanCpf);
     if (!user) {
-      alert('Nenhum cadastro encontrado para este CPF.');
-      if (btnSubmit) { btnSubmit.disabled = false; btnSubmit.innerHTML = '<i data-lucide="check-circle"></i> Salvar Nova Senha e Entrar'; }
-      if (window.lucide) lucide.createIcons();
-      return;
+      user = { cpf: cleanCpf, name: 'Titular', phone: verifyInput, email: verifyInput, password: newPass };
+    } else {
+      const userPhoneClean = (user.phone || '').replace(/\D/g, '');
+      const verifyClean = verifyInput.replace(/\D/g, '');
+      const userEmail = (user.email || '').toLowerCase().trim();
+
+      const phoneMatches = userPhoneClean && (verifyClean.includes(userPhoneClean) || userPhoneClean.includes(verifyClean));
+      const emailMatches = userEmail && userEmail === verifyInput;
+
+      if (!phoneMatches && !emailMatches && (user.phone || user.email)) {
+        alert('O telefone ou e-mail digitado não confere com o cadastro deste CPF.');
+        if (btnSubmit) { btnSubmit.disabled = false; btnSubmit.innerHTML = '<i data-lucide="check-circle"></i> Salvar Nova Senha e Entrar'; }
+        if (window.lucide) lucide.createIcons();
+        return;
+      }
+      user.password = newPass;
     }
 
-    // Verify contact matching (either phone digits or email)
-    const userPhoneClean = (user.phone || '').replace(/\D/g, '');
-    const verifyClean = verifyInput.replace(/\D/g, '');
-    const userEmail = (user.email || '').toLowerCase().trim();
-
-    const phoneMatches = userPhoneClean && (verifyClean.includes(userPhoneClean) || userPhoneClean.includes(verifyClean));
-    const emailMatches = userEmail && userEmail === verifyInput;
-
-    if (!phoneMatches && !emailMatches && (user.phone || user.email)) {
-      alert('O telefone ou e-mail digitado não confere com o cadastro deste CPF.');
-      if (btnSubmit) { btnSubmit.disabled = false; btnSubmit.innerHTML = '<i data-lucide="check-circle"></i> Salvar Nova Senha e Entrar'; }
-      if (window.lucide) lucide.createIcons();
-      return;
-    }
-
-    // Update password
-    user.password = newPass;
     this.saveLocalUserData(user);
     this.activeUser = user;
     this.activeCpf = cleanCpf;
 
+    this.loadCpfData();
     await this.syncFullDataToCloud();
 
     this.loginSuccess(user, true);
@@ -552,7 +646,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     5. DATA STORAGE & PROFILES
+     5. DATA STORAGE & PROFILES (PERMANENT RETENTION)
      ------------------------------------------------------------------------ */
   getCpfStorageKey(subKey) {
     return `minhas_contas_cpf_${this.activeCpf}_${subKey}`;
@@ -561,6 +655,7 @@ class AccountsApp {
   loadCpfData() {
     if (!this.activeCpf) return;
 
+    // Load Profiles
     const rawProfiles = localStorage.getItem(this.getCpfStorageKey('profiles'));
     if (rawProfiles) {
       try { this.profiles = JSON.parse(rawProfiles); } catch(e) { this.profiles = []; }
@@ -573,15 +668,30 @@ class AccountsApp {
       this.saveCpfProfiles();
     }
 
+    // Active Profile
     const savedActiveProfile = localStorage.getItem(this.getCpfStorageKey('active_profile'));
     this.activeProfileId = savedActiveProfile || 'all';
 
+    // Budget Goal
     const savedBudget = localStorage.getItem(this.getCpfStorageKey('budget_goal'));
     this.budgetGoal = savedBudget ? parseFloat(savedBudget) : 3000;
 
+    // Accounts: Load existing or retrieve legacy/backup
     const rawAccounts = localStorage.getItem(this.getCpfStorageKey('accounts'));
-    if (rawAccounts) {
+    const vaultRaw = localStorage.getItem(`minhas_contas_permanent_vault_${this.activeCpf}`);
+    const legacyRaw = localStorage.getItem('minhas_contas_app_data_v2');
+
+    if (rawAccounts && rawAccounts !== '[]') {
       try { this.accounts = JSON.parse(rawAccounts); } catch(e) { this.accounts = []; }
+    } else if (vaultRaw && vaultRaw !== '[]') {
+      try { this.accounts = JSON.parse(vaultRaw); } catch(e) {}
+    } else if (legacyRaw && legacyRaw !== '[]') {
+      try { 
+        this.accounts = JSON.parse(legacyRaw);
+        this.saveCpfAccounts();
+      } catch(e) { 
+        this.accounts = this.getSampleData(); 
+      }
     } else {
       this.accounts = this.getSampleData();
       this.saveCpfAccounts();
@@ -599,6 +709,7 @@ class AccountsApp {
   saveCpfAccounts() {
     if (!this.activeCpf) return;
     localStorage.setItem(this.getCpfStorageKey('accounts'), JSON.stringify(this.accounts));
+    localStorage.setItem(`minhas_contas_permanent_vault_${this.activeCpf}`, JSON.stringify(this.accounts));
     this.rebuildPixMap();
     this.syncFullDataToCloud();
   }

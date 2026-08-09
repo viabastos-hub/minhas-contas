@@ -929,7 +929,7 @@
     </div>
   </div>
 
-  <!-- MODAL: BACKUP & RESTORE & WIPE DEMO -->
+  <!-- MODAL: BACKUP & RESTORE & EMERGENCY RECOVERY -->
   <div id="backupModal" class="modal-overlay hidden">
     <div class="modal-card">
       <div class="modal-header">
@@ -937,13 +937,15 @@
         <button onclick="app.closeModal('backupModal')" class="modal-close">&times;</button>
       </div>
       <div class="modal-body">
-        <div class="backup-section highlight-box">
-          <h3>🧹 Zerar Contas de Teste</h3>
-          <p>Apague as contas de teste e deixe seu aplicativo zerado e limpo para colocar suas contas verdadeiras.</p>
-          <button onclick="app.clearDemoAccountsPrompt()" class="btn-danger-sm" style="font-size:0.95rem; padding:10px 16px;"><i data-lucide="trash-2"></i> Zerar Contas de Teste</button>
+        
+        <!-- Emergency Auto-Recovery Button -->
+        <div class="backup-section" style="background:var(--primary-light); border:1px solid var(--primary-color); padding:16px; border-radius:12px; margin-bottom:16px;">
+          <h3 style="color:var(--primary-color); margin-bottom:4px;">🔍 Varredura de Recuperação Automática</h3>
+          <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">
+            Clique aqui para fazer uma busca completa na memória do navegador e restaurar quaisquer contas salvas anteriormente.
+          </p>
+          <button onclick="app.emergencyScanAndRestore()" class="btn-primary"><i data-lucide="search"></i> Buscar e Restaurar Minhas Contas</button>
         </div>
-
-        <hr class="divider">
 
         <div class="backup-section">
           <h3>1. Exportar Dados (Backup)</h3>
@@ -959,6 +961,15 @@
           <input type="file" id="importFileInput" accept=".json" class="hidden" onchange="app.importDataJSON(event)">
           <button onclick="document.getElementById('importFileInput').click()" class="btn-secondary"><i data-lucide="upload"></i> Selecionar Arquivo JSON</button>
         </div>
+
+        <hr class="divider">
+
+        <div class="backup-section highlight-box">
+          <h3>🧹 Zerar Contas de Teste</h3>
+          <p>Apague as contas de teste e deixe seu aplicativo zerado e limpo para colocar suas contas verdadeiras.</p>
+          <button onclick="app.clearDemoAccountsPrompt()" class="btn-danger-sm" style="font-size:0.95rem; padding:10px 16px;"><i data-lucide="trash-2"></i> Zerar Contas de Teste</button>
+        </div>
+
       </div>
     </div>
   </div>
