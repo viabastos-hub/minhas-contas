@@ -1904,6 +1904,176 @@ button, input, select, textarea {
 }
 
 /* ==========================================================================
+   INCOME MILESTONES (SALÁRIO, ADIANTAMENTO & ENTRADAS DO MÊS)
+   ========================================================================== */
+.income-milestones-section {
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.income-milestones-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.income-milestones-header h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-main);
+}
+
+.btn-add-income-quick {
+  background: var(--primary-light);
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: var(--transition);
+}
+
+.btn-add-income-quick:hover {
+  background: var(--primary-color);
+  color: #ffffff;
+}
+
+.income-milestones-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.income-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  position: relative;
+  overflow: hidden;
+  transition: var(--transition);
+}
+
+.income-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.income-card.salary {
+  border-left: 4px solid var(--primary-color);
+}
+
+.income-card.advance {
+  border-left: 4px solid #3b82f6;
+}
+
+.income-card.extra {
+  border-left: 4px solid #8b5cf6;
+}
+
+.income-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.income-card-tag {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.income-card.salary .income-card-tag { color: var(--primary-color); }
+.income-card.advance .income-card-tag { color: #3b82f6; }
+.income-card.extra .income-card-tag { color: #8b5cf6; }
+
+.income-card-amount {
+  font-size: 1.45rem;
+  font-weight: 800;
+  font-family: var(--font-heading);
+  color: var(--primary-color);
+}
+
+.income-card-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border-color);
+  padding-top: 8px;
+}
+
+.income-card-status {
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+}
+
+.income-card-status.paid {
+  background: var(--primary-light);
+  color: var(--primary-color);
+}
+
+.income-card-status.pending {
+  background: var(--warning-light);
+  color: var(--warning-color);
+}
+
+.income-presets-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.income-preset-btn {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.income-preset-btn:hover {
+  background: var(--primary-light);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+/* ==========================================================================
    PRINT STYLES FOR REPORTS (PDF EXPORT)
    ========================================================================== */
 @media print {
@@ -1920,6 +2090,7 @@ button, input, select, textarea {
   .btn-add,
   .btn-quick-expense,
   .quick-shortcuts-panel,
+  .income-milestones-section,
   .reports-header-panel,
   .report-toolbar,
   .app-footer,
@@ -1962,3 +2133,4 @@ button, input, select, textarea {
   .box-val.expense { color: #e11d48 !important; }
   .box-val.balance { color: #2563eb !important; }
 }
+

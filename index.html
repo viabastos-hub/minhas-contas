@@ -422,6 +422,11 @@
         </div>
       </div>
 
+      <!-- ENTRADAS DO MÊS (SALÁRIO & ADIANTAMENTO) -->
+      <div id="incomeMilestonesSection" class="income-milestones-section">
+        <!-- Rendered dynamically by JS -->
+      </div>
+
       <!-- QUICK ACCESS SHORTCUT BAR (GASTOS DIÁRIOS RÁPIDOS) -->
       <div class="quick-shortcuts-panel">
         <div class="quick-shortcuts-header">
@@ -749,6 +754,13 @@
             <input type="radio" name="accType" value="receive" onchange="app.toggleTypeUI()">
             <i data-lucide="arrow-up-circle"></i> Conta a Receber
           </label>
+        </div>
+
+        <!-- Income Quick Presets (Salário, Adiantamento, Renda Extra) -->
+        <div id="incomePresetsRow" class="income-presets-row hidden">
+          <button type="button" class="income-preset-btn" onclick="app.setIncomePreset('Salário / Pagamento Principal', 'Salário / Pagamento')">💼 Salário Principal</button>
+          <button type="button" class="income-preset-btn" onclick="app.setIncomePreset('Adiantamento / Vale Salarial', 'Adiantamento / Vale')">💵 Adiantamento / Vale</button>
+          <button type="button" class="income-preset-btn" onclick="app.setIncomePreset('Renda Extra / Freela', 'Renda Extra / Vendas')">📈 Renda Extra</button>
         </div>
 
         <div class="form-grid">

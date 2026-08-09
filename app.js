@@ -1,5 +1,6 @@
 /* ==========================================================================
    MINHAS CONTAS - BULLETPROOF DATA PRESERVATION & SYNC ENGINE
+   INCLUDES: GASTOS RÁPIDOS + SALÁRIO & ADIANTAMENTO DASHBOARD MILESTONES
    ========================================================================== */
 
 class AccountsApp {
@@ -783,13 +784,26 @@ class AccountsApp {
         id: '5',
         profileId: 'p_titular',
         title: 'Salário Mensal',
-        person: 'Empresa X',
+        person: 'Empresa Principal',
         amount: 3500.00,
         type: 'receive',
         dueDate: `${curYear}-${curMonth}-05`,
-        category: 'Salário/Renda',
+        category: 'Salário / Pagamento',
         status: 'paid',
-        notes: 'Depósito em conta'
+        paidAt: `${curYear}-${curMonth}-05`,
+        notes: 'Pagamento principal 5º dia útil'
+      },
+      {
+        id: '6',
+        profileId: 'p_titular',
+        title: 'Adiantamento / Vale',
+        person: 'Empresa Principal',
+        amount: 1400.00,
+        type: 'receive',
+        dueDate: `${curYear}-${curMonth}-20`,
+        category: 'Adiantamento / Vale',
+        status: 'pending',
+        notes: 'Vale quinzenal dia 20'
       }
     ];
   }
@@ -1098,7 +1112,7 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     10. DASHBOARD RENDERER
+     10. DASHBOARD RENDERER (INCLUDES SALÁRIO & ADIANTAMENTO PANEL)
      ------------------------------------------------------------------------ */
   renderDashboard() {
     const curYear = this.selectedDate.getFullYear();
@@ -1123,8 +1137,8 @@ class AccountsApp {
         if (acc.status === 'pending') toPayCount++;
         else if (acc.status === 'paid') alreadyPaid += acc.amount;
       } else if (acc.type === 'receive') {
+        toReceive += acc.amount;
         if (acc.status === 'pending') {
-          toReceive += acc.amount;
           toReceiveCount++;
         }
       }
@@ -1141,6 +1155,9 @@ class AccountsApp {
 
     document.getElementById('kpiBalance').textContent = this.formatCurrency(balance);
     document.getElementById('kpiAlreadyPaid').textContent = this.formatCurrency(alreadyPaid);
+
+    // Render Income Milestones (Salário & Adiantamento)
+    this.renderIncomeMilestones(monthAccounts);
 
     // Render Smart Budget Goal / Progress Bar
     const budgetDisplay = document.getElementById('budgetAmountDisplay');
@@ -1235,6 +1252,110 @@ class AccountsApp {
     }
 
     this.renderCategoryChart(monthAccounts);
+  }
+
+  renderIncomeMilestones(monthAccounts) {
+    const container = document.getElementById('incomeMilestonesSection');
+    if (!container) return;
+
+    const incomeAccounts = monthAccounts.filter(a => a.type === 'receive');
+    
+    // Categorize incomes: Salário, Adiantamento, and Outras Entradas
+    let salaryAcc = incomeAccounts.find(a => 
+      a.category === 'Salário / Pagamento' || 
+      a.category === 'Salário/Renda' || 
+      a.title.toLowerCase().includes('salár') || 
+      a.title.toLowerCase().includes('pagamento')
+    );
+
+    let advanceAcc = incomeAccounts.find(a => 
+      a.category === 'Adiantamento / Vale' || 
+      a.title.toLowerCase().includes('adiant') || 
+      a.title.toLowerCase().includes('vale')
+    );
+
+    const otherIncomes = incomeAccounts.filter(a => a.id !== salaryAcc?.id && a.id !== advanceAcc?.id);
+    const otherIncomesTotal = otherIncomes.reduce((sum, a) => sum + a.amount, 0);
+
+    let html = `
+      <div class="income-milestones-header">
+        <h3><i data-lucide="wallet-cards" style="color:var(--primary-color)"></i> Entradas do Mês (Salário & Adiantamento)</h3>
+        <button class="btn-add-income-quick" onclick="app.openNewIncomeModal()"><i data-lucide="plus" style="width:12px"></i> Lançar Receita</button>
+      </div>
+
+      <div class="income-milestones-grid">
+        <!-- 1. Salário Principal -->
+        <div class="income-card salary" ${salaryAcc ? `onclick="app.editAccount('${salaryAcc.id}')"` : `onclick="app.openNewIncomeModal('Salário')"`} style="cursor:pointer;">
+          <div class="income-card-top">
+            <span class="income-card-tag"><i data-lucide="briefcase" style="width:13px"></i> Salário Principal</span>
+            ${salaryAcc ? `<span class="income-card-status ${salaryAcc.status === 'paid' ? 'paid' : 'pending'}">${salaryAcc.status === 'paid' ? '🟢 Recebido' : '🟡 A Receber'}</span>` : '<span class="income-card-status pending" style="opacity:0.7">+ Cadastrar</span>'}
+          </div>
+          <div class="income-card-amount">
+            ${salaryAcc ? this.formatCurrency(salaryAcc.amount) : 'R$ 0,00'}
+          </div>
+          <div class="income-card-meta">
+            <span>${salaryAcc ? `📅 Data: ${this.formatDate(salaryAcc.dueDate)}` : 'Defina o dia do seu pagamento'}</span>
+            <span>${salaryAcc ? this.escapeHtml(salaryAcc.person || 'Empresa') : '💼 5º dia útil'}</span>
+          </div>
+        </div>
+
+        <!-- 2. Adiantamento / Vale -->
+        <div class="income-card advance" ${advanceAcc ? `onclick="app.editAccount('${advanceAcc.id}')"` : `onclick="app.openNewIncomeModal('Adiantamento')"`} style="cursor:pointer;">
+          <div class="income-card-top">
+            <span class="income-card-tag"><i data-lucide="banknote" style="width:13px"></i> Adiantamento / Vale</span>
+            ${advanceAcc ? `<span class="income-card-status ${advanceAcc.status === 'paid' ? 'paid' : 'pending'}">${advanceAcc.status === 'paid' ? '🟢 Recebido' : '🟡 A Receber'}</span>` : '<span class="income-card-status pending" style="opacity:0.7">+ Cadastrar</span>'}
+          </div>
+          <div class="income-card-amount" style="color:#3b82f6;">
+            ${advanceAcc ? this.formatCurrency(advanceAcc.amount) : 'R$ 0,00'}
+          </div>
+          <div class="income-card-meta">
+            <span>${advanceAcc ? `📅 Data: ${this.formatDate(advanceAcc.dueDate)}` : 'Defina o dia do seu vale'}</span>
+            <span>${advanceAcc ? this.escapeHtml(advanceAcc.person || 'Empresa') : '💵 Dia 15 ou 20'}</span>
+          </div>
+        </div>
+
+        <!-- 3. Renda Extra / Outras Entradas -->
+        <div class="income-card extra" onclick="app.openNewIncomeModal('Renda Extra')" style="cursor:pointer;">
+          <div class="income-card-top">
+            <span class="income-card-tag"><i data-lucide="trending-up" style="width:13px"></i> Renda Extra & Outros</span>
+            <span class="income-card-status paid">${otherIncomes.length} entrada(s)</span>
+          </div>
+          <div class="income-card-amount" style="color:#8b5cf6;">
+            ${this.formatCurrency(otherIncomesTotal)}
+          </div>
+          <div class="income-card-meta">
+            <span>Serviços, Vendas, Freelas</span>
+            <span>+ Adicionar</span>
+          </div>
+        </div>
+      </div>
+    `;
+
+    container.innerHTML = html;
+  }
+
+  openNewIncomeModal(presetType = '') {
+    this.openNewModal();
+    const receiveRadio = document.querySelector('input[name="accType"][value="receive"]');
+    if (receiveRadio) {
+      receiveRadio.checked = true;
+      this.toggleTypeUI();
+    }
+
+    if (presetType === 'Salário') {
+      this.setIncomePreset('Salário / Pagamento Principal', 'Salário / Pagamento');
+    } else if (presetType === 'Adiantamento') {
+      this.setIncomePreset('Adiantamento / Vale Salarial', 'Adiantamento / Vale');
+    } else if (presetType === 'Renda Extra') {
+      this.setIncomePreset('Renda Extra / Serviços', 'Renda Extra / Vendas');
+    }
+  }
+
+  setIncomePreset(title, category) {
+    const titleInput = document.getElementById('accTitle');
+    const catSelect = document.getElementById('accCategory');
+    if (titleInput) titleInput.value = title;
+    if (catSelect) catSelect.value = category;
   }
 
   renderCategoryChart(monthAccounts) {
@@ -1938,7 +2059,6 @@ class AccountsApp {
     document.getElementById('accPixKey').value = '';
     document.getElementById('accAmount').value = '';
     document.getElementById('accDueDate').value = new Date().toISOString().split('T')[0];
-    document.getElementById('accCategory').value = 'Cartão de Terceiros';
     document.getElementById('accStatus').value = 'pending';
     document.getElementById('accNotes').value = '';
     document.getElementById('accIsInstallment').checked = false;
@@ -1969,7 +2089,6 @@ class AccountsApp {
     document.getElementById('accPixKey').value = acc.pixKey || '';
     document.getElementById('accAmount').value = acc.amount;
     document.getElementById('accDueDate').value = acc.dueDate;
-    document.getElementById('accCategory').value = acc.category || 'Outros';
     document.getElementById('accStatus').value = acc.status;
     document.getElementById('accNotes').value = acc.notes || '';
     document.getElementById('accIsInstallment').checked = false;
@@ -1984,6 +2103,9 @@ class AccountsApp {
     radios.forEach(r => r.checked = (r.value === acc.type));
     this.toggleTypeUI();
 
+    const catSelect = document.getElementById('accCategory');
+    if (catSelect) catSelect.value = acc.category || 'Outros';
+
     document.getElementById('modalTitle').textContent = 'Editar Conta';
     this.openModal('accountModal');
   }
@@ -1992,6 +2114,8 @@ class AccountsApp {
     const selectedType = document.querySelector('input[name="accType"]:checked')?.value || 'pay';
     const payBtn = document.querySelector('.type-btn.pay');
     const receiveBtn = document.querySelector('.type-btn.receive');
+    const incomePresets = document.getElementById('incomePresetsRow');
+    const catSelect = document.getElementById('accCategory');
 
     payBtn?.classList.toggle('active', selectedType === 'pay');
     receiveBtn?.classList.toggle('active', selectedType === 'receive');
@@ -2004,17 +2128,45 @@ class AccountsApp {
     const amountLabel = document.getElementById('labelAccAmount');
 
     if (selectedType === 'receive') {
-      if (titleLabel) titleLabel.textContent = 'Descrição do Valor a Receber (ex: Serviço, Freela, Venda) *';
-      if (personLabel) personLabel.innerHTML = '<i data-lucide="user"></i> De quem vou receber? / Nome da Pessoa *';
+      if (incomePresets) incomePresets.classList.remove('hidden');
+      if (titleLabel) titleLabel.textContent = 'Descrição do Valor a Receber (ex: Salário, Vale, Freela) *';
+      if (personLabel) personLabel.innerHTML = '<i data-lucide="user"></i> De quem vou receber? / Nome da Empresa/Pessoa *';
       if (dueDateLabel) dueDateLabel.textContent = isInstallment ? 'Data do 1º Recebimento *' : 'Data em que vou receber *';
       if (installmentLabel) installmentLabel.innerHTML = '<strong>Este valor será recebido em parcelas? (ex: 6x de R$ 50)</strong>';
       if (amountLabel) amountLabel.textContent = isInstallment ? 'Valor de CADA Parcela a Receber (R$) *' : 'Valor a Receber (R$) *';
+
+      // Tailor category options for income
+      if (catSelect) {
+        catSelect.innerHTML = `
+          <option value="Salário / Pagamento">💼 Salário / Pagamento Principal</option>
+          <option value="Adiantamento / Vale">💵 Adiantamento / Vale Salarial</option>
+          <option value="Renda Extra / Vendas">📈 Renda Extra / Vendas / Freela</option>
+          <option value="Rendimentos / Aluguel">💰 Rendimentos / Aluguel</option>
+          <option value="Outros">📌 Outras Entradas</option>
+        `;
+      }
     } else {
+      if (incomePresets) incomePresets.classList.add('hidden');
       if (titleLabel) titleLabel.textContent = 'Descrição da Conta a Pagar (ex: Mercado, Cartão) *';
       if (personLabel) personLabel.innerHTML = '<i data-lucide="user"></i> Para quem devo pagar? *';
       if (dueDateLabel) dueDateLabel.textContent = isInstallment ? 'Data do 1º Vencimento *' : 'Data de Vencimento *';
       if (installmentLabel) installmentLabel.innerHTML = '<strong>Esta compra é parcelada? (ex: 6x de R$ 50)</strong>';
       if (amountLabel) amountLabel.textContent = isInstallment ? 'Valor de CADA Parcela (R$) *' : 'Valor da Conta (R$) *';
+
+      // Tailor category options for expense
+      if (catSelect) {
+        catSelect.innerHTML = `
+          <option value="Cartão de Terceiros">💳 Cartão de Terceiros</option>
+          <option value="Pet / Ração">🐱 Pet / Ração de Animais</option>
+          <option value="Moradia">🏠 Moradia (Aluguel, Luz, Água)</option>
+          <option value="Alimentação">🛒 Alimentação / Mercado / Lanches</option>
+          <option value="Transporte">🚗 Transporte / Combustível</option>
+          <option value="Saúde">⚕️ Saúde & Farmácia</option>
+          <option value="Lazer">🎉 Lazer & Entretenimento</option>
+          <option value="Educação">📚 Educação & Cursos</option>
+          <option value="Outros">📌 Outros Gastos</option>
+        `;
+      }
     }
 
     if (window.lucide) lucide.createIcons();
@@ -2075,7 +2227,6 @@ class AccountsApp {
       }
     } else {
       if (isInstallment && installmentCount > 1) {
-        // PER-PARCEL REPLICATION: Use exact typed amount for each month!
         const baseDate = new Date(dueDate + 'T00:00:00');
 
         for (let i = 1; i <= installmentCount; i++) {
@@ -2089,7 +2240,7 @@ class AccountsApp {
             title: `${title} (${i}/${installmentCount})`,
             person,
             pixKey,
-            amount: parseFloat(amount.toFixed(2)), // EXACT PER-PARCEL VALUE
+            amount: parseFloat(amount.toFixed(2)),
             dueDate: instDateStr,
             category,
             status: i === 1 ? status : 'pending',
@@ -2104,7 +2255,7 @@ class AccountsApp {
           profileId,
           title, person, pixKey, amount, dueDate, category, status, notes, type
         });
-        this.showToast('Conta cadastrada e sincronizada na nuvem!');
+        this.showToast('Lançamento cadastrado com sucesso!');
       }
     }
 
@@ -2123,7 +2274,7 @@ class AccountsApp {
       if (window.confetti) {
         confetti({ particleCount: 60, spread: 60, origin: { y: 0.8 } });
       }
-      this.showToast('Conta marcada como Concluída/Paga! 🎉');
+      this.showToast(acc.type === 'receive' ? 'Receita marcada como Recebida! 💰' : 'Conta marcada como Quitada/Paga! 🎉');
     }
 
     this.saveCpfAccounts();
@@ -2131,11 +2282,11 @@ class AccountsApp {
   }
 
   deleteAccount(id) {
-    if (confirm('Tem certeza que deseja excluir esta conta?')) {
+    if (confirm('Tem certeza que deseja excluir este lançamento?')) {
       this.accounts = this.accounts.filter(a => a.id !== id);
       this.saveCpfAccounts();
       this.render();
-      this.showToast('Conta excluída.');
+      this.showToast('Lançamento excluído.');
     }
   }
 
