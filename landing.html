@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  
+  <title>Minhas Contas - O Aplicativo de Gestão Financeira Sem Mensalidades</title>
+  <meta name="description" content="Organize suas contas a pagar, a receber, parcelamentos, cartões de terceiros e gastos rápidos no celular e computador. O fim das planilhas difíceis!">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#10b981">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+  
+  <!-- Google Fonts: Outfit & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="landing.css">
+</head>
+<body>
+
+  <!-- =========================================================================
+       TOP ANNOUNCEMENT BAR
+       ========================================================================= -->
+  <div class="top-announcement">
+    <span>⚡ <strong>OFERTA DE LANÇAMENTO:</strong> Acesso Vitalício com <strong>60% OFF</strong> por tempo limitado!</span>
+  </div>
+
+  <!-- =========================================================================
+       HEADER / NAVBAR
+       ========================================================================= -->
+  <header class="site-header">
+    <div class="nav-container">
+      <div class="brand">
+        <div class="brand-logo">
+          <i data-lucide="wallet"></i>
+        </div>
+        <span class="brand-name">Minhas Contas</span>
+      </div>
+
+      <nav class="nav-links">
+        <a href="#recursos">Recursos</a>
+        <a href="#como-funciona">Como Funciona</a>
+        <a href="#depoimentos">Depoimentos</a>
+        <a href="#faq">Dúvidas</a>
+        <a href="app" style="color:var(--primary-color); font-weight:700;"><i data-lucide="log-in" style="width:14px; vertical-align:middle;"></i> Entrar no App</a>
+      </nav>
+
+      <div class="nav-cta-wrapper" style="display:flex; gap:10px; align-items:center;">
+        <a href="app" class="btn-secondary-nav" style="color:var(--text-main); text-decoration:none; font-size:0.85rem; font-weight:600; padding:8px 14px; border:1px solid var(--border-color); border-radius:var(--radius-full);">
+          Entrar
+        </a>
+        <a href="#oferta" class="btn-nav-cta">
+          <span>Garantir Acesso</span>
+          <i data-lucide="arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       HERO SECTION
+       ========================================================================= -->
+  <section class="hero-section">
+    <div class="hero-glow"></div>
+    <div class="container hero-content">
+      
+      <div class="hero-badge">
+        <span class="badge-pulse"></span>
+        <i data-lucide="sparkles"></i> O FIM DAS PLANILHAS COMPLICADAS DE EXCEL
+      </div>
+
+      <h1 class="hero-title">
+        Tenha <span class="highlight-gradient">100% de Controle</span> do Seu Dinheiro no Celular e no Computador
+      </h1>
+
+      <p class="hero-subtitle">
+        Controle contas a pagar, salário, vale quinzenal, compras parceladas, cartões de terceiros e gastos rápidos do dia a dia. <strong>Simples, visual e sem mensalidades!</strong>
+      </p>
+
+      <div class="hero-actions">
+        <a href="#oferta" class="btn-primary-hero">
+          <i data-lucide="zap"></i>
+          <span>QUERO MEU ACESSO VITALÍCIO</span>
+        </a>
+        <a href="index.html" target="_blank" class="btn-secondary-hero">
+          <i data-lucide="play-circle"></i>
+          <span>Ver Demonstração</span>
+        </a>
+      </div>
+
+      <div class="trust-bar">
+        <div class="trust-item">
+          <i data-lucide="check-circle-2" style="color:#10b981"></i>
+          <span>Pagamento Único</span>
+        </div>
+        <div class="trust-item">
+          <i data-lucide="smartphone" style="color:#3b82f6"></i>
+          <span>Android, iPhone e PC</span>
+        </div>
+        <div class="trust-item">
+          <i data-lucide="shield-check" style="color:#8b5cf6"></i>
+          <span>Garantia de 7 Dias</span>
+        </div>
+      </div>
+
+      <!-- INTERACTIVE APP SHOWCASE MOCKUP -->
+      <div class="mockup-container">
+        <div class="mockup-header">
+          <div class="mockup-dots">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <div class="mockup-url">
+            <i data-lucide="lock" style="width:12px"></i> minhascontas.app • Sincronizado
+          </div>
+        </div>
+
+        <div class="mockup-screen">
+          <!-- Mockup KPI Row -->
+          <div class="mockup-kpis">
+            <div class="m-kpi danger">
+              <span class="m-kpi-label">A Pagar no Mês</span>
+              <strong class="m-kpi-val">R$ 1.850,00</strong>
+              <small>3 contas pendentes</small>
+            </div>
+            <div class="m-kpi success">
+              <span class="m-kpi-label">A Receber no Mês</span>
+              <strong class="m-kpi-val">R$ 4.900,00</strong>
+              <small>Salário + Vale</small>
+            </div>
+            <div class="m-kpi info">
+              <span class="m-kpi-label">Saldo Previsto</span>
+              <strong class="m-kpi-val">R$ 3.050,00</strong>
+              <small>Dinheiro livre</small>
+            </div>
+          </div>
+
+          <!-- Mockup Income Milestones -->
+          <div class="mockup-income-panel">
+            <div class="m-inc-card">
+              <div class="m-inc-top">
+                <span>💼 Salário Principal</span>
+                <span class="m-status paid">🟢 Recebido</span>
+              </div>
+              <strong>R$ 3.500,00</strong>
+              <small>📅 5º dia útil • Empresa Principal</small>
+            </div>
+            <div class="m-inc-card">
+              <div class="m-inc-top">
+                <span>💵 Adiantamento / Vale</span>
+                <span class="m-status pending">🟡 A Receber</span>
+              </div>
+              <strong>R$ 1.400,00</strong>
+              <small>📅 Dia 20 • Empresa Principal</small>
+            </div>
+          </div>
+
+          <!-- Mockup Quick Expense Chips -->
+          <div class="mockup-quick-bar">
+            <span>⚡ Lançar Rápido:</span>
+            <span class="m-chip">🐱 Ração Pet</span>
+            <span class="m-chip">🥤 Refrigerante</span>
+            <span class="m-chip">⛽ Combustível</span>
+            <span class="m-chip">🥖 Padaria</span>
+          </div>
+
+          <!-- Mockup Sample Account Items -->
+          <div class="mockup-accounts-list">
+            <div class="m-acc-item">
+              <div class="m-acc-icon pay"><i data-lucide="arrow-down-right"></i></div>
+              <div class="m-acc-info">
+                <strong>Fatura Celular (Parc 3/6)</strong>
+                <small>Cartão da Lílian • Pix: lilian@email.com • Vence 15/08</small>
+              </div>
+              <div class="m-acc-amount">-R$ 50,00</div>
+            </div>
+
+            <div class="m-acc-item">
+              <div class="m-acc-icon pay"><i data-lucide="arrow-down-right"></i></div>
+              <div class="m-acc-info">
+                <strong>Aluguel do Apartamento</strong>
+                <small>Imobiliária • Vence 05/08</small>
+              </div>
+              <div class="m-acc-amount">-R$ 1.200,00</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- =========================================================================
+       COMPARISON / PROBLEM VS SOLUTION SECTION
+       ========================================================================= -->
+  <section class="comparison-section">
+    <div class="container">
+      <div class="section-heading text-center">
+        <h2 class="section-title">Você ainda perde tempo com isso?</h2>
+        <p class="section-subtitle">Veja a diferença entre tentar se virar sozinho e usar o Minhas Contas:</p>
+      </div>
+
+      <div class="comparison-grid">
+        <!-- The Old Way (Bad) -->
+        <div class="comparison-card bad">
+          <div class="comp-header">
+            <div class="comp-icon bad">❌</div>
+            <h3>Do Jeito Antigo</h3>
+          </div>
+          <ul class="comp-list">
+            <li>Planilhas de Excel que travam e são horríveis de mexer no celular.</li>
+            <li>Esquecer contas pequenas e pagar juros e multas por atraso.</li>
+            <li>Fazer contas de cabeça toda vez que compra algo parcelado.</li>
+            <li>Emprestar cartão para parentes ou amigos e ficar no prejuízo.</li>
+            <li>Não saber para onde foi o dinheiro do seu salário no fim do mês.</li>
+          </ul>
+        </div>
+
+        <!-- The Minhas Contas Way (Good) -->
+        <div class="comparison-card good">
+          <div class="comp-header">
+            <div class="comp-icon good">✅</div>
+            <h3>Com o App Minhas Contas</h3>
+          </div>
+          <ul class="comp-list">
+            <li>Aplicativo visual, rápido e pronto para usar no celular e computador.</li>
+            <li>Alertas visuais de contas vencendo para nunca mais pagar juros.</li>
+            <li>Parcelamento automático: digite o valor da parcela e ele replica nos meses seguintes.</li>
+            <li>Gestão de cartões de terceiros com Chave Pix salva para pagar com 1 clique.</li>
+            <li>Painel de Salário e Vale Quinzenal com visão exata do saldo livre.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================================
+       CORE FEATURES (GRID DE RECURSOS)
+       ========================================================================= -->
+  <section id="recursos" class="features-section">
+    <div class="container">
+      <div class="section-heading text-center">
+        <div class="hero-badge" style="margin:0 auto 12px;"><i data-lucide="layers"></i> RECURSOS EXCLUSIVOS</div>
+        <h2 class="section-title">Tudo o que você precisa em um só aplicativo</h2>
+        <p class="section-subtitle">Desenvolvido pensando na realidade das famílias e profissionais brasileiros.</p>
+      </div>
+
+      <div class="features-grid">
+        
+        <!-- Feature 1 -->
+        <div class="feature-card">
+          <div class="feat-icon" style="background:rgba(16,185,129,0.15); color:#10b981;">
+            <i data-lucide="credit-card"></i>
+          </div>
+          <h3>Parcelamento por Valor da Parcela</h3>
+          <p>Comprou em 6x de R$ 50,00? Basta colocar o valor da parcela e a quantidade de vezes. O app calcula e lança automaticamente nos próximos 6 meses sem complicações!</p>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="feature-card">
+          <div class="feat-icon" style="background:rgba(59,130,246,0.15); color:#3b82f6;">
+            <i data-lucide="wallet-cards"></i>
+          </div>
+          <h3>Painel de Salário & Vale Quinzenal</h3>
+          <p>Acompanhe quando entra o seu pagamento do 5º dia útil, o seu adiantamento do dia 15/20 e rendas extras, calculando o saldo livre em tempo real.</p>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="feature-card">
+          <div class="feat-icon" style="background:rgba(245,158,11,0.15); color:#f59e0b;">
+            <i data-lucide="zap"></i>
+          </div>
+          <h3>Gastos Rápidos do Dia a Dia</h3>
+          <p>Comprou ração para o pet, refrigerante, combustível ou pão na padaria? Lance o gasto em 3 segundos direto pelos botões de atalho.</p>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="feature-card">
+          <div class="feat-icon" style="background:rgba(139,92,246,0.15); color:#8b5cf6;">
+            <i data-lucide="users"></i>
+          </div>
+          <h3>Cartões de Terceiros & Chave Pix</h3>
+          <p>Controle o que você comprou no cartão da sua mãe, amiga ou cunhado. O app mostra o saldo e guarda a Chave Pix da pessoa para você pagar com 1 toque.</p>
+        </div>
+
+        <!-- Feature 5 -->
+        <div class="feature-card">
+          <div class="feat-icon" style="background:rgba(244,63,94,0.15); color:#f43f5e;">
+            <i data-lucide="file-text"></i>
+          </div>
+          <h3>Relatórios em PDF & Extratos</h3>
+          <p>Gere relatórios mensais consolidados por categorias para prestação de contas, impressão ou envio em PDF com design profissional.</p>
+        </div>
+
+        <!-- Feature 6 -->
+        <div class="feature-card">
+          <div class="feat-icon" style="background:rgba(6,182,212,0.15); color:#06b6d4;">
+            <i data-lucide="cloud"></i>
+          </div>
+          <h3>Sincronização Nuvem PC + Celular</h3>
+          <p>Acesse pelo celular ou pelo computador. Seus dados são sincronizados automaticamente por CPF e protegidos com senha.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================================
+       HOW IT WORKS (3 PASSOS)
+       ========================================================================= -->
+  <section id="como-funciona" class="how-it-works-section">
+    <div class="container">
+      <div class="section-heading text-center">
+        <h2 class="section-title">Como começar em 3 passos simples</h2>
+        <p class="section-subtitle">Você estará com suas contas organizadas em menos de 5 minutos!</p>
+      </div>
+
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-num">1</div>
+          <h3>Garanta o seu Acesso</h3>
+          <p>Faça o pagamento único e seguro aqui pela Kiwify (PIX ou Cartão de Crédito).</p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-num">2</div>
+          <h3>Abra no Celular ou PC</h3>
+          <p>Você recebe o link no mesmo instante e fixa o aplicativo na tela inicial do seu celular.</p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-num">3</div>
+          <h3>Cadastre seu CPF e Use</h3>
+          <p>Crie sua senha segura e comece a lançar suas contas e ter total controle do seu dinheiro!</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================================
+       TESTIMONIALS / SOCIAL PROOF
+       ========================================================================= -->
+  <section id="depoimentos" class="testimonials-section">
+    <div class="container">
+      <div class="section-heading text-center">
+        <div class="hero-badge" style="margin:0 auto 12px;"><i data-lucide="star" style="color:#f59e0b"></i> AVALIAÇÃO 4.9 DE 5 ESTRELAS</div>
+        <h2 class="section-title">O que dizem quem já usa o Minhas Contas</h2>
+      </div>
+
+      <div class="testimonials-grid">
+        
+        <div class="testi-card">
+          <div class="stars">⭐⭐⭐⭐⭐</div>
+          <p>"Eu usava caderno e sempre esquecia de pagar boletos no prazo. Com o app no celular, sei exatamente quando entra meu adiantamento e o que tenho pra pagar. Salvou meu mês!"</p>
+          <div class="testi-user">
+            <div class="user-avatar">MR</div>
+            <div>
+              <strong>Marcos Roberto</strong>
+              <span>Autônomo • São Paulo</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="testi-card">
+          <div class="stars">⭐⭐⭐⭐⭐</div>
+          <p>"A melhor função pra mim foi a do parcelamento e do cartão de terceiros! Comprei no cartão da minha irmã, coloquei a chave Pix dela e o app me avisa todo mês certinho quanto devo."</p>
+          <div class="testi-user">
+            <div class="user-avatar">CL</div>
+            <div>
+              <strong>Camila Lima</strong>
+              <span>Analista Contábil • Curitiba</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="testi-card">
+          <div class="stars">⭐⭐⭐⭐⭐</div>
+          <p>"Excelente! Não aguentava mais pagar mensalidade de 30 reais todo mês em outros aplicativos. Paguei uma vez só e tenho o app completo no computador e no celular."</p>
+          <div class="testi-user">
+            <div class="user-avatar">FA</div>
+            <div>
+              <strong>Fernando Alves</strong>
+              <span>Empresário • Belo Horizonte</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================================
+       OFFER / PRICING SECTION (CHECKOUT CALL)
+       ========================================================================= -->
+  <section id="oferta" class="pricing-section">
+    <div class="container">
+      <div class="pricing-card">
+        
+        <div class="pricing-badge">
+          🔥 OFERTA ESPECIAL VITALÍCIA
+        </div>
+
+        <h2 class="pricing-title">Acesso Completo ao Aplicativo Minhas Contas</h2>
+        <p class="pricing-subtitle">Sem mensalidades • Sem cobranças adicionais • Atualizações inclusas</p>
+
+        <div class="price-box">
+          <span class="old-price">De R$ 97,00</span>
+          <div class="main-price">
+            <span class="currency">R$</span>
+            <span class="value">37</span>
+            <span class="cents">,90</span>
+          </div>
+          <span class="price-terms">Pagamento único ou até 4x de R$ 9,98</span>
+        </div>
+
+        <ul class="pricing-features-list">
+          <li><i data-lucide="check" style="color:#10b981"></i> <strong>Acesso Vitalício Completo</strong> ao aplicativo</li>
+          <li><i data-lucide="check" style="color:#10b981"></i> <strong>Sincronização Automática</strong> entre Celular (Android/iPhone) e PC</li>
+          <li><i data-lucide="check" style="color:#10b981"></i> <strong>Controle de Parcelamentos</strong> com valor por parcela</li>
+          <li><i data-lucide="check" style="color:#10b981"></i> <strong>Painel de Salário & Vale</strong> (5º dia útil e dia 20)</li>
+          <li><i data-lucide="check" style="color:#10b981"></i> <strong>Cartões de Terceiros</strong> com Chave Pix integrada</li>
+          <li><i data-lucide="check" style="color:#10b981"></i> <strong>Gastos Rápidos</strong> do dia a dia (ração, mercado, combustível)</li>
+          <li><i data-lucide="check" style="color:#10b981"></i> <strong>Relatórios em PDF</strong> e extratos detalhados</li>
+          <li><i data-lucide="check" style="color:#10b981"></i> <strong>Suporte e Atualizações</strong> sem pagar nada a mais</li>
+        </ul>
+
+        <!-- BOTÃO DE COMPRA KIWIFY -->
+        <!-- Substitua o link abaixo pelo seu link de checkout gerado na Kiwify -->
+        <a href="https://kiwify.com.br" id="btnBuyNow" class="btn-checkout-kiwify" target="_blank">
+          <i data-lucide="lock"></i>
+          <span>QUERO MEU ACESSO AGORA</span>
+        </a>
+
+        <div class="guarantee-box">
+          <i data-lucide="shield-check" style="width:40px; height:40px; color:#10b981; flex-shrink:0;"></i>
+          <div>
+            <strong>Garantia Incondicional de 7 Dias:</strong>
+            <p>Se você não gostar do aplicativo por qualquer motivo, basta solicitar o reembolso na Kiwify que devolveremos 100% do seu dinheiro sem perguntas.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================================
+       FAQ SECTION (ACCORDION)
+       ========================================================================= -->
+  <section id="faq" class="faq-section">
+    <div class="container">
+      <div class="section-heading text-center">
+        <h2 class="section-title">Perguntas Frequentes</h2>
+        <p class="section-subtitle">Tire suas dúvidas rápidas sobre o aplicativo:</p>
+      </div>
+
+      <div class="faq-accordion">
+        
+        <div class="faq-item" onclick="toggleFaq(this)">
+          <div class="faq-question">
+            <span>Preciso pagar mensalidade todo mês?</span>
+            <i data-lucide="chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p><strong>Não!</strong> Esta oferta é de pagamento único. Você compra uma única vez e o acesso é seu para sempre, sem nenhuma cobrança surpresa no seu cartão.</p>
+          </div>
+        </div>
+
+        <div class="faq-item" onclick="toggleFaq(this)">
+          <div class="faq-question">
+            <span>Funciona no iPhone e no Android?</span>
+            <i data-lucide="chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p><strong>Sim!</strong> O Minhas Contas é um aplicativo web progressivo (PWA) de última geração. Ele instala perfeitamente no iPhone (iOS), em qualquer celular Android e também no Computador (Windows/Mac).</p>
+          </div>
+        </div>
+
+        <div class="faq-item" onclick="toggleFaq(this)">
+          <div class="faq-question">
+            <span>Como eu recebo o acesso após a compra?</span>
+            <i data-lucide="chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>Assim que o seu pagamento for aprovado pela Kiwify (instantâneo no Pix ou Cartão), você recebe um e-mail com o link de acesso direto e o tutorial em vídeo de como instalar.</p>
+          </div>
+        </div>
+
+        <div class="faq-item" onclick="toggleFaq(this)">
+          <div class="faq-question">
+            <span>Se eu cadastrar no PC, consigo abrir no celular?</span>
+            <i data-lucide="chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p><strong>Com certeza!</strong> O aplicativo conta com sincronização em nuvem em tempo real. Basta fazer login com seu CPF e Senha em qualquer aparelho que todas as suas contas aparecem na hora.</p>
+          </div>
+        </div>
+
+        <div class="faq-item" onclick="toggleFaq(this)">
+          <div class="faq-question">
+            <span>E se eu não gostar?</span>
+            <i data-lucide="chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>Você tem <strong>7 dias de garantia total</strong>. Se não se adaptar, basta solicitar o cancelamento na Kiwify e devolvemos 100% do valor pago.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================================
+       FOOTER
+       ========================================================================= -->
+  <footer class="landing-footer">
+    <div class="container footer-inner">
+      <div class="brand">
+        <div class="brand-logo" style="width:36px; height:36px;">
+          <i data-lucide="wallet" style="width:20px; height:20px;"></i>
+        </div>
+        <span class="brand-name" style="font-size:1.2rem;">Minhas Contas</span>
+      </div>
+
+      <p class="footer-copy">
+        © 2026 Minhas Contas Software. Todos os direitos reservados.<br>
+        Ambiente 100% seguro com criptografia e processamento pela Kiwify.
+      </p>
+    </div>
+  </footer>
+
+  <!-- =========================================================================
+       STICKY BOTTOM MOBILE BAR
+       ========================================================================= -->
+  <div class="sticky-mobile-cta">
+    <div class="mobile-cta-info">
+      <span>Oferta Vitalícia:</span>
+      <strong>R$ 37,90</strong>
+    </div>
+    <a href="#oferta" class="btn-mobile-buy">
+      <i data-lucide="zap"></i> Quero o App
+    </a>
+  </div>
+
+  <script>
+    // Initialize Lucide Icons
+    if (window.lucide) {
+      lucide.createIcons();
+    }
+
+    // Toggle FAQ Accordion
+    function toggleFaq(element) {
+      element.classList.toggle('active');
+      const icon = element.querySelector('i');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // Trigger Confetti on CTA click
+    document.querySelectorAll('.btn-primary-hero, .btn-checkout-kiwify').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (window.confetti) {
+          confetti({ particleCount: 70, spread: 60, origin: { y: 0.8 } });
+        }
+      });
+    });
+  </script>
+</body>
+</html>

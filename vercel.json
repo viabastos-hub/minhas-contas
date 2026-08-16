@@ -27,6 +27,30 @@
   ],
   "routes": [
     {
+      "src": "/app",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/login",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/vendas",
+      "dest": "/landing.html"
+    },
+    {
+      "src": "/landing",
+      "dest": "/landing.html"
+    },
+    {
+      "src": "/oferta",
+      "dest": "/landing.html"
+    },
+    {
+      "src": "/",
+      "dest": "/landing.html"
+    },
+    {
       "handle": "filesystem"
     },
     {
