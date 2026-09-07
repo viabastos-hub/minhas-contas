@@ -5,19 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   
-  <title>Minhas Contas - Gestão Financeira Pessoal & Familiar</title>
-  <meta name="description" content="Aplicativo seguro para controle de contas a pagar, a receber, parcelamentos, cartões de terceiros e gastos rápidos do dia a dia.">
-  <meta name="author" content="Minhas Contas Software">
-  <meta name="robots" content="index, follow">
-  
-  <!-- Security & Standard Form Attributes -->
-  <meta name="referrer" content="strict-origin-when-cross-origin">
-
-  <!-- PWA Meta Tags -->
+  <title>Minhas Contas - Gestão Financeira Pessoal</title>
+  <meta name="description" content="Aplicativo fácil e seguro para controle de contas a pagar, a receber e parcelamentos por CPF.">
   <meta name="theme-color" content="#10b981">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Minhas Contas">
+  
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
   <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
@@ -36,200 +30,45 @@
   <!-- Canvas Confetti -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
-  <!-- QRCode.js for Instant Cross-Device Sync -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
   <!-- CSS -->
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
   <!-- =========================================================================
-       AUTH OVERLAY (LOGIN, CADASTRO, REDEFINIÇÃO DIRETA DE SENHA)
+       CLEAN CPF ENTRY OVERLAY (ISOLAMENTO POR CPF SEM SENHA)
        ========================================================================= -->
-  <div id="authOverlay" class="cpf-login-overlay hidden">
+  <div id="authOverlay" class="cpf-login-overlay">
     <div class="cpf-login-card">
       <div class="login-brand-logo">
         <i data-lucide="wallet"></i>
       </div>
-      <h2 id="authCardTitle">Minhas Contas</h2>
-      <p class="login-tagline" id="authCardTagline">Acesse suas finanças no celular ou computador com sincronização automática.</p>
+      <h2>Minhas Contas</h2>
+      <p class="login-tagline">Digite seu CPF para acessar suas contas com segurança e privacidade.</p>
 
-      <!-- 1. LOGIN FORM -->
-      <form id="loginForm" onsubmit="app.handleAuthLogin(event)" class="login-form">
+      <form id="cpfLoginForm" onsubmit="app.handleCpfLogin(event)" class="login-form">
         <div class="form-group">
           <label for="loginCpfInput"><i data-lucide="fingerprint"></i> Seu CPF:</label>
           <input 
             type="text" 
             id="loginCpfInput" 
-            name="username"
-            placeholder="000.000.000-00" 
-            maxlength="14" 
-            required 
-            autocomplete="username" 
-            oninput="app.maskCpf(this)"
-          >
-        </div>
-
-        <div class="form-group">
-          <div class="label-row-split">
-            <label for="loginPassInput"><i data-lucide="lock"></i> Sua Senha:</label>
-            <a href="javascript:void(0)" onclick="app.showForgotPassView()" class="forgot-link">Esqueci a senha</a>
-          </div>
-          <div class="password-input-wrapper">
-            <input 
-              type="password" 
-              id="loginPassInput" 
-              name="password"
-              placeholder="Digite sua senha" 
-              required
-              autocomplete="current-password"
-            >
-            <button type="button" class="btn-toggle-eye" onclick="app.togglePasswordVisibility('loginPassInput', this)" title="Ver senha">
-              <i data-lucide="eye"></i>
-            </button>
-          </div>
-        </div>
-
-        <div class="remember-row">
-          <input type="checkbox" id="rememberAuthCheck" checked>
-          <label for="rememberAuthCheck">Manter conectado neste aparelho</label>
-        </div>
-
-        <button type="submit" class="btn-primary btn-block" id="btnLoginSubmit">
-          <i data-lucide="log-in"></i> Entrar no Aplicativo
-        </button>
-
-        <div class="auth-switch-text">
-          Não tem conta ainda? <a href="javascript:void(0)" onclick="app.showRegisterView()">Criar conta gratuita</a>
-        </div>
-      </form>
-
-      <!-- 2. REGISTER FORM -->
-      <form id="registerForm" onsubmit="app.handleAuthRegister(event)" class="login-form hidden">
-        <div class="form-group">
-          <label for="regCpfInput"><i data-lucide="fingerprint"></i> Seu CPF *</label>
-          <input 
-            type="text" 
-            id="regCpfInput" 
-            name="new_username"
-            placeholder="000.000.000-00" 
-            maxlength="14" 
-            required 
-            autocomplete="off"
-            oninput="app.maskCpf(this)"
-          >
-        </div>
-
-        <div class="form-group">
-          <label for="regNameInput"><i data-lucide="user"></i> Seu Nome Completo / Titular *</label>
-          <input type="text" id="regNameInput" name="name" placeholder="Ex: Vivian Silva" required autocomplete="name">
-        </div>
-
-        <div class="form-group">
-          <label for="regPhoneInput"><i data-lucide="phone"></i> Celular / Telefone (com DDD) *</label>
-          <input 
-            type="text" 
-            id="regPhoneInput" 
-            name="tel"
-            placeholder="(11) 99999-8888" 
-            maxlength="15" 
-            required 
-            autocomplete="tel"
-            oninput="app.maskPhone(this)"
-          >
-          <small class="help-text">Usado para confirmação de segurança e recuperação rápida de senha.</small>
-        </div>
-
-        <div class="form-group">
-          <label for="regEmailInput"><i data-lucide="mail"></i> Seu E-mail *</label>
-          <input type="email" id="regEmailInput" name="email" placeholder="seuemail@exemplo.com" required autocomplete="email">
-        </div>
-
-        <div class="form-group">
-          <label for="regPassInput"><i data-lucide="lock"></i> Crie uma Senha *</label>
-          <div class="password-input-wrapper">
-            <input type="password" id="regPassInput" name="new-password" placeholder="Mínimo 4 caracteres" required minlength="4" autocomplete="new-password">
-            <button type="button" class="btn-toggle-eye" onclick="app.togglePasswordVisibility('regPassInput', this)">
-              <i data-lucide="eye"></i>
-            </button>
-          </div>
-        </div>
-
-        <button type="submit" class="btn-primary btn-block" id="btnRegisterSubmit">
-          <i data-lucide="user-check"></i> Concluir Cadastro e Entrar
-        </button>
-
-        <div class="auth-switch-text">
-          Já tem conta? <a href="javascript:void(0)" onclick="app.showLoginView()">Fazer login</a>
-        </div>
-      </form>
-
-      <!-- 3. IN-APP PASSWORD RESET FORM -->
-      <form id="forgotForm" onsubmit="app.handleDirectPasswordReset(event)" class="login-form hidden">
-        <div class="form-group">
-          <label for="forgotCpfInput"><i data-lucide="fingerprint"></i> Seu CPF cadastrado:</label>
-          <input 
-            type="text" 
-            id="forgotCpfInput" 
             placeholder="000.000.000-00" 
             maxlength="14" 
             required 
             oninput="app.maskCpf(this)"
+            style="font-size:1.1rem; text-align:center; letter-spacing:1px;"
           >
+          <small class="help-text">Suas contas ficam salvas exclusivamente no seu CPF.</small>
         </div>
 
-        <div class="form-group">
-          <label for="forgotVerifyInput"><i data-lucide="shield-check"></i> Digite seu Telefone ou E-mail cadastrado:</label>
-          <input 
-            type="text" 
-            id="forgotVerifyInput" 
-            placeholder="Telefone ou e-mail de segurança" 
-            required
-          >
-          <small class="help-text">Confirmação de segurança direta nesta tela.</small>
-        </div>
-
-        <div class="form-group">
-          <label for="forgotNewPassInput"><i data-lucide="lock"></i> Digite sua Nova Senha:</label>
-          <div class="password-input-wrapper">
-            <input type="password" id="forgotNewPassInput" placeholder="Mínimo 4 caracteres" required minlength="4">
-            <button type="button" class="btn-toggle-eye" onclick="app.togglePasswordVisibility('forgotNewPassInput', this)">
-              <i data-lucide="eye"></i>
-            </button>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="forgotConfirmPassInput"><i data-lucide="check"></i> Confirme a Nova Senha:</label>
-          <div class="password-input-wrapper">
-            <input type="password" id="forgotConfirmPassInput" placeholder="Repita a nova senha" required minlength="4">
-            <button type="button" class="btn-toggle-eye" onclick="app.togglePasswordVisibility('forgotConfirmPassInput', this)">
-              <i data-lucide="eye"></i>
-            </button>
-          </div>
-        </div>
-
-        <button type="submit" class="btn-primary btn-block" id="btnForgotSubmit">
-          <i data-lucide="check-circle"></i> Salvar Nova Senha e Entrar
+        <button type="submit" class="btn-primary btn-block" id="btnLoginSubmit" style="padding:14px; font-size:1rem; font-weight:700;">
+          <i data-lucide="log-in"></i> Entrar no Meu Aplicativo
         </button>
-
-        <div class="auth-switch-text" style="margin-top:10px;">
-          Lembrou a senha? <a href="javascript:void(0)" onclick="app.showLoginView()">Voltar para o Login</a>
-        </div>
       </form>
 
-      <!-- Sync Helper Tip -->
-      <div style="margin-top:16px; padding:12px; background:var(--primary-light); border:1px dashed var(--primary-color); border-radius:10px; font-size:0.84rem; text-align:center;">
-        <span style="font-weight:700; color:var(--primary-color);">📱 Conexão Instantânea com Celular</span>
-        <p style="margin-top:4px; font-size:0.78rem; color:var(--text-muted);">
-          Já cadastrou no computador? No computador, clique em <strong>"📱 Conectar Celular"</strong> e aponte a câmera para o QR Code para entrar no celular sem precisar redigitar!
-        </p>
-      </div>
-
-      <div class="login-privacy-note">
+      <div class="login-privacy-note" style="margin-top:16px;">
         <i data-lucide="shield-check" style="color:var(--primary-color)"></i>
-        <span><strong>Ambiente Seguro:</strong> Seus dados são protegidos com sincronização automática entre celular e computador.</span>
+        <span><strong>Ambiente Seguro:</strong> Cada usuário acessa apenas suas próprias contas vinculadas ao seu CPF.</span>
       </div>
     </div>
   </div>
@@ -259,50 +98,30 @@
         <div>
           <div class="brand-title-row">
             <h1>Minhas Contas</h1>
-            <span class="cpf-badge" id="currentCpfBadge" title="CPF conectado">
+            <span class="cpf-badge" id="currentCpfBadge" title="CPF Conectado">
               <i data-lucide="fingerprint" style="width:11px"></i> <span id="currentCpfText">000.000.000-00</span>
-            </span>
-            <span class="sync-status-badge" id="syncStatusBadge" title="Status da sincronização">
-              <span class="sync-dot"></span> <span id="syncStatusText">Conectado</span>
             </span>
           </div>
 
-          <!-- Multi-Profile / Multi-Member Switcher -->
+          <!-- Multi-Profile Switcher -->
           <div class="profile-switcher">
-            <i data-lucide="users" style="width:14px; height:14px; color:var(--primary-color)"></i>
+            <i data-lucide="user-check" style="width:14px; height:14px; color:var(--primary-color)"></i>
             <select id="userProfileSelect" onchange="app.switchUserProfile(this.value)">
               <!-- Rendered dynamically by JS -->
             </select>
-            <button onclick="app.openModal('membersModal')" class="btn-add-profile" title="Gerenciar Usuários e Membros">
-              <i data-lucide="user-plus" style="width:11px"></i> Gerenciar
-            </button>
+            <button onclick="app.createNewProfile()" class="btn-add-profile" title="Criar Novo Perfil">+ Perfil</button>
           </div>
         </div>
       </div>
 
       <div class="header-actions">
-        <!-- Connect Phone Button (📱 Conectar Celular) -->
-        <button class="btn-connect-phone" onclick="app.openPhoneSyncModal()" title="Sincronizar com o Celular via QR Code ou WhatsApp">
-          <i data-lucide="smartphone"></i>
-          <span class="btn-text">Conectar Celular</span>
+        <!-- Quick Action Buttons -->
+        <button class="btn-quick-expense" onclick="app.openQuickExpenseModal()" title="Lançar Gasto Rápido">
+          <i data-lucide="zap"></i> <span class="btn-text">Gasto Rápido</span>
         </button>
 
-        <!-- Quick Income Button (💰 Lançar Receita) -->
-        <button class="btn-add-income-quick" onclick="app.openNewIncomeModal()" title="Lançar Salário ou Receita">
-          <i data-lucide="plus"></i>
-          <span class="btn-text">Lançar Receita</span>
-        </button>
-
-        <!-- Quick Expense Button (⚡ Gasto Rápido) -->
-        <button class="btn-quick-expense" onclick="app.openQuickExpenseModal()" title="Lançar Gasto Rápido do Dia a Dia">
-          <i data-lucide="zap"></i>
-          <span class="btn-text">Gasto Rápido</span>
-        </button>
-
-        <!-- Add Transaction Button -->
         <button class="btn-add" onclick="app.openNewModal()">
-          <i data-lucide="plus"></i>
-          <span class="btn-text">Nova Conta</span>
+          <i data-lucide="plus"></i> <span class="btn-text">Nova Conta</span>
         </button>
 
         <!-- Theme Toggle -->
@@ -311,11 +130,11 @@
         </button>
 
         <!-- Backup/Restore -->
-        <button class="icon-btn" onclick="app.openModal('backupModal')" title="Backup & Compartilhar">
+        <button class="icon-btn" onclick="app.openModal('backupModal')" title="Backup & Dados">
           <i data-lucide="download-cloud"></i>
         </button>
 
-        <!-- Logout / Switch CPF Button -->
+        <!-- Trocar CPF / Sair -->
         <button class="icon-btn" onclick="app.logoutCpf()" title="Trocar CPF / Sair" style="color:var(--text-muted)">
           <i data-lucide="log-out"></i>
         </button>
@@ -323,7 +142,7 @@
     </div>
   </header>
 
-  <!-- Navigation Tabs (Mobile & Desktop) -->
+  <!-- Navigation Tabs -->
   <nav class="nav-tabs">
     <button class="nav-tab active" data-tab="dashboard" onclick="app.switchTab('dashboard')">
       <i data-lucide="layout-dashboard"></i>
@@ -340,10 +159,6 @@
     <button class="nav-tab" data-tab="quick-expenses" onclick="app.switchTab('quick-expenses')">
       <i data-lucide="zap" style="color:#f59e0b"></i>
       <span>Gastos Rápidos</span>
-    </button>
-    <button class="nav-tab" data-tab="reports" onclick="app.switchTab('reports')">
-      <i data-lucide="file-bar-chart"></i>
-      <span>Relatórios</span>
     </button>
     <button class="nav-tab" data-tab="calendar" onclick="app.switchTab('calendar')">
       <i data-lucide="calendar"></i>
@@ -383,9 +198,6 @@
         </div>
 
         <div class="motivation-footer">
-          <button onclick="app.requestMobileNotificationPermission()" class="btn-notify-daily">
-            <i data-lucide="bell"></i> Receber Frase Diária no Celular
-          </button>
           <button onclick="app.nextDailyMotivationTip()" class="btn-next-tip">
             <i data-lucide="rotate-cw"></i> Ver Outra Dica
           </button>
@@ -396,7 +208,7 @@
       <div class="filter-bar">
         <div class="month-selector">
           <button onclick="app.changeMonth(-1)" class="icon-btn-sm"><i data-lucide="chevron-left"></i></button>
-          <span id="currentMonthYearDisplay" class="month-title">Agosto 2026</span>
+          <span id="currentMonthYearDisplay" class="month-title">Setembro 2026</span>
           <button onclick="app.changeMonth(1)" class="icon-btn-sm"><i data-lucide="chevron-right"></i></button>
           <button onclick="app.resetToCurrentMonth()" class="btn-today">Mês Atual</button>
         </div>
@@ -417,25 +229,6 @@
           <span id="overdueAlertText">0 contas vencidas totalizando R$ 0,00</span>
         </div>
         <button class="btn-alert-action" onclick="app.filterByStatus('vencidas')">Ver Contas Atrasadas</button>
-      </div>
-
-      <!-- SMART MONTHLY BUDGET / GOAL PROGRESS BAR -->
-      <div class="budget-goal-card" id="budgetGoalCard">
-        <div class="budget-header">
-          <div class="budget-title">
-            <i data-lucide="target" style="color:var(--primary-color)"></i>
-            <span>Meta de Gastos do Mês: <strong id="budgetAmountDisplay">R$ 0,00</strong></span>
-            <button onclick="app.editBudgetGoalPrompt()" class="btn-icon-inline" title="Alterar meta de gastos"><i data-lucide="pencil" style="width:13px"></i></button>
-          </div>
-          <span class="budget-status-text" id="budgetStatusText">0% do limite</span>
-        </div>
-        <div class="budget-progress-track">
-          <div class="budget-progress-bar" id="budgetProgressBar" style="width: 0%;"></div>
-        </div>
-        <div class="budget-sub-info">
-          <span id="budgetSpentInfo">Gasto total: R$ 0,00</span>
-          <span id="budgetRemainingInfo">Restante: R$ 0,00</span>
-        </div>
       </div>
 
       <!-- KPI Summary Cards -->
@@ -481,35 +274,6 @@
         </div>
       </div>
 
-      <!-- ENTRADAS DO MÊS (SALÁRIO & ADIANTAMENTO) -->
-      <div id="incomeMilestonesSection" class="income-milestones-section">
-        <!-- Rendered dynamically by JS -->
-      </div>
-
-      <!-- QUICK ACCESS SHORTCUT BAR (GASTOS DIÁRIOS RÁPIDOS) -->
-      <div class="quick-shortcuts-panel">
-        <div class="quick-shortcuts-header">
-          <span><i data-lucide="zap" style="color:#f59e0b"></i> Lançar Gasto Rápido:</span>
-        </div>
-        <div class="quick-chips-row">
-          <button class="quick-chip" onclick="app.quickAddPreset('Ração / Pet', 'Pet / Ração')">🐱 Ração Pet</button>
-          <button class="quick-chip" onclick="app.quickAddPreset('Refrigerante / Lanche', 'Alimentação')">🥤 Refrigerante / Lanche</button>
-          <button class="quick-chip" onclick="app.quickAddPreset('Combustível', 'Transporte')">⛽ Combustível</button>
-          <button class="quick-chip" onclick="app.quickAddPreset('Padaria / Café', 'Alimentação')">🥖 Padaria / Café</button>
-          <button class="quick-chip" onclick="app.quickAddPreset('Farmácia / Remédio', 'Saúde')">💊 Farmácia</button>
-          <button class="quick-chip" onclick="app.quickAddPreset('Supermercado Rápido', 'Alimentação')">🛒 Mercado</button>
-          <button class="quick-chip chip-more" onclick="app.openQuickExpenseModal()">+ Outro Gasto</button>
-        </div>
-      </div>
-
-      <!-- FAMILY MEMBERS BALANCE SUMMARY (When in 'all' view) -->
-      <div id="familyMembersSummary" class="family-members-summary hidden">
-        <h3><i data-lucide="users"></i> Balanço por Membro da Família no Mês</h3>
-        <div id="familyMembersGrid" class="family-members-grid">
-          <!-- Rendered dynamically by JS -->
-        </div>
-      </div>
-
       <!-- Charts & Fast Access Section -->
       <div class="dashboard-widgets">
         <!-- Chart: Categorias -->
@@ -535,38 +299,32 @@
       </div>
     </section>
 
-    <!-- TAB 2: ENTRADAS & RECEITAS (SALÁRIO, VALE, RENDAS EXTRAS) -->
+    <!-- TAB 2: ENTRADAS & SALÁRIO -->
     <section id="tab-income" class="tab-content">
-      <div class="quick-expenses-header">
-        <div>
-          <h2><i data-lucide="wallet-cards" style="color:#10b981"></i> Entradas, Salário & Adiantamentos</h2>
-          <p>Acompanhe quando entra o seu pagamento, vale quinzenal e rendas extras no mês.</p>
+      <div class="controls-panel">
+        <div class="search-box">
+          <i data-lucide="wallet"></i>
+          <span style="font-weight:700">Entradas, Salários e Vendas do Mês</span>
         </div>
-        <button class="btn-add-income-quick" onclick="app.openNewIncomeModal()" style="font-size:0.95rem; padding:10px 18px; background:var(--primary-color); color:#fff;">
-          <i data-lucide="plus"></i> Lançar Receita / Salário
+        <button class="btn-add" onclick="app.openNewIncomeModal()">
+          <i data-lucide="plus"></i> Lançar Nova Entrada
         </button>
       </div>
 
-      <!-- Income KPI Summary Row -->
-      <div class="quick-expenses-kpi-row">
-        <div class="quick-kpi-box" style="border-left-color:var(--primary-color)">
-          <span>Total a Receber Neste Mês</span>
-          <strong id="incomeMonthTotal" style="color:var(--primary-color)">R$ 0,00</strong>
-        </div>
-        <div class="quick-kpi-box" style="border-left-color:var(--info-color)">
-          <span>Total Já Recebido / Na Conta</span>
-          <strong id="incomeMonthReceived" style="color:var(--info-color)">R$ 0,00</strong>
+      <div class="list-summary-bar">
+        <span>Mostrando receitas do mês</span>
+        <div class="summary-pills">
+          <span class="pill pill-success">Total Previsto: <strong id="incomeSumTotal">R$ 0,00</strong></span>
         </div>
       </div>
 
-      <div id="incomeAccountsList" class="accounts-container">
-        <!-- Dynamic list of income items -->
+      <div id="incomeListContainer" class="accounts-container">
+        <!-- Rendered dynamically -->
       </div>
     </section>
 
     <!-- TAB 3: ALL ACCOUNTS LIST -->
     <section id="tab-list" class="tab-content">
-      <!-- Search and Filter Controls -->
       <div class="controls-panel">
         <div class="search-box">
           <i data-lucide="search"></i>
@@ -601,7 +359,28 @@
         </div>
       </div>
 
-      <!-- Quick Action Total Summary for current filter -->
+      <!-- Batch Actions Bar (for multi-selecting and deleting multiple accounts) -->
+      <div id="batchActionBar" class="batch-action-bar hidden">
+        <div class="batch-info">
+          <label class="batch-select-all">
+            <input type="checkbox" id="selectAllCheckbox" onchange="app.toggleSelectAll(this.checked)">
+            <span><strong>Selecionar Todas</strong></span>
+          </label>
+          <span id="selectedCountText" class="selected-count-badge">0 selecionadas</span>
+        </div>
+        <div class="batch-buttons">
+          <button type="button" class="btn-batch-paid" onclick="app.markSelectedAsPaid()">
+            <i data-lucide="check-circle-2"></i> Concluir Selecionadas
+          </button>
+          <button type="button" class="btn-batch-delete" onclick="app.deleteSelectedAccounts()">
+            <i data-lucide="trash-2"></i> Apagar Selecionadas
+          </button>
+          <button type="button" class="btn-batch-cancel" onclick="app.clearSelection()">
+            &times; Limpar Seleção
+          </button>
+        </div>
+      </div>
+
       <div class="list-summary-bar">
         <span>Mostrando <strong id="filteredCount">0</strong> contas</span>
         <div class="summary-pills">
@@ -610,95 +389,33 @@
         </div>
       </div>
 
-      <!-- Accounts Table / Mobile Cards Container -->
       <div id="accountsContainer" class="accounts-container">
         <!-- Rendered by JS -->
       </div>
     </section>
 
-    <!-- TAB 4: GASTOS RÁPIDOS DO DIA A DIA -->
+    <!-- TAB 4: GASTOS RÁPIDOS -->
     <section id="tab-quick-expenses" class="tab-content">
-      <div class="quick-expenses-header">
-        <div>
-          <h2><i data-lucide="zap" style="color:#f59e0b"></i> Gastos Rápidos do Dia a Dia</h2>
-          <p>Compras à vista feitas no dia a dia (ração, refrigerante, combustível, padaria, etc.).</p>
+      <div class="controls-panel">
+        <div class="search-box">
+          <i data-lucide="zap" style="color:#f59e0b"></i>
+          <span style="font-weight:700">Gastos Rápidos do Dia a Dia</span>
         </div>
-        <button class="btn-quick-expense" onclick="app.openQuickExpenseModal()" style="font-size:0.95rem; padding:10px 18px;">
-          <i data-lucide="plus"></i> Novo Gasto Rápido
+        <button class="btn-quick-expense" onclick="app.openQuickExpenseModal()">
+          <i data-lucide="plus"></i> Lançar Gasto Rápido
         </button>
       </div>
 
-      <div class="quick-expenses-kpi-row">
-        <div class="quick-kpi-box">
-          <span>Gastos Rápidos Neste Mês</span>
-          <strong id="quickMonthTotal">R$ 0,00</strong>
-        </div>
-        <div class="quick-kpi-box">
-          <span>Total de Compras Rápidas</span>
-          <strong id="quickMonthCount">0 compras</strong>
-        </div>
-      </div>
-
       <div id="quickExpensesList" class="accounts-container">
-        <!-- Dynamic list of quick expenses -->
+        <!-- Rendered dynamically -->
       </div>
     </section>
 
-    <!-- TAB 5: RELATÓRIOS -->
-    <section id="tab-reports" class="tab-content">
-      <div class="reports-header-panel">
-        <div class="reports-header-info">
-          <h2><i data-lucide="file-bar-chart"></i> Relatórios Financeiros</h2>
-          <p>Gere extratos detalhados mensais, por categorias de gastos ou por pessoa para impressão e PDF.</p>
-        </div>
-        <div class="reports-actions-bar">
-          <button onclick="app.shareReportWhatsapp()" class="btn-whatsapp" title="Enviar resumo no WhatsApp">
-            <i data-lucide="send"></i> Compartilhar no WhatsApp
-          </button>
-          <button onclick="app.printCurrentReport()" class="btn-primary">
-            <i data-lucide="printer"></i> Imprimir / Salvar PDF
-          </button>
-        </div>
-      </div>
-
-      <!-- Report Config Toolbar -->
-      <div class="report-toolbar">
-        <div class="toolbar-item">
-          <label><i data-lucide="layers"></i> Tipo de Relatório:</label>
-          <select id="reportTypeSelect" onchange="app.renderReportsTab()">
-            <option value="monthly">📅 Relatório Mensal Completo (Receitas vs Despesas)</option>
-            <option value="category">🛒 Relatório Detalhado por Gastos / Categorias</option>
-            <option value="people">👥 Relatório por Pessoa / Cartão de Terceiros</option>
-            <option value="annual">📈 Relatório Anual Consolidado</option>
-          </select>
-        </div>
-
-        <div class="toolbar-item" id="reportMonthSelectorWrapper">
-          <label><i data-lucide="calendar"></i> Mês de Referência:</label>
-          <select id="reportMonthSelect" onchange="app.renderReportsTab()">
-            <!-- Generated by JS -->
-          </select>
-        </div>
-
-        <div class="toolbar-item" id="reportYearSelectorWrapper">
-          <label><i data-lucide="calendar"></i> Ano:</label>
-          <select id="reportYearSelect" onchange="app.renderReportsTab()">
-            <!-- Generated by JS -->
-          </select>
-        </div>
-      </div>
-
-      <!-- Report Paper Sheet -->
-      <div id="reportSheetContainer" class="report-sheet-container">
-        <!-- Dynamically generated report document -->
-      </div>
-    </section>
-
-    <!-- TAB 6: CALENDAR VIEW -->
+    <!-- TAB 5: CALENDAR VIEW -->
     <section id="tab-calendar" class="tab-content">
       <div class="calendar-header-bar">
         <button onclick="app.changeCalendarMonth(-1)" class="icon-btn-sm"><i data-lucide="chevron-left"></i></button>
-        <h2 id="calendarMonthTitle" class="calendar-title">Agosto 2026</h2>
+        <h2 id="calendarMonthTitle" class="calendar-title">Setembro 2026</h2>
         <button onclick="app.changeCalendarMonth(1)" class="icon-btn-sm"><i data-lucide="chevron-right"></i></button>
       </div>
 
@@ -710,29 +427,15 @@
           <!-- Calendar Days Rendered by JS -->
         </div>
       </div>
-
-      <!-- Selected Day Details Panel -->
-      <div id="calendarDayDetails" class="day-details-panel hidden">
-        <div class="day-details-header">
-          <h3 id="selectedDayTitle">Contas do dia 15/08/2026</h3>
-          <button onclick="app.closeDayDetails()" class="btn-dismiss">&times;</button>
-        </div>
-        <div id="selectedDayItems" class="selected-day-items">
-          <!-- Items -->
-        </div>
-      </div>
     </section>
 
-    <!-- TAB 7: BY PERSON / CARTÕES DE TERCEIROS / CHAVE PIX -->
+    <!-- TAB 6: BY PERSON / PIX -->
     <section id="tab-people" class="tab-content">
       <div class="people-header">
         <div>
           <h2>Contas por Pessoa / Chave Pix de Credores</h2>
           <p>Veja quanto deve ou tem a receber de cada pessoa e copie o Pix com 1 clique!</p>
         </div>
-        <button class="btn-primary" onclick="app.exportPersonReport()">
-          <i data-lucide="file-text"></i> Gerar Extrato de Prestação de Contas
-        </button>
       </div>
 
       <div id="peopleCardsGrid" class="people-cards-grid">
@@ -742,121 +445,12 @@
 
   </main>
 
-  <!-- MODAL: MOBILE SYNC & QR CODE TRANSFER -->
-  <div id="phoneSyncModal" class="modal-overlay hidden">
-    <div class="modal-card" style="max-width: 480px; text-align: center;">
-      <div class="modal-header">
-        <h2><i data-lucide="smartphone" style="color:var(--primary-color)"></i> Conectar com o Celular</h2>
-        <button onclick="app.closeModal('phoneSyncModal')" class="modal-close">&times;</button>
-      </div>
-      <div class="modal-body">
-        <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:12px;">
-          Puxe todas as suas contas, login e dados do computador para o seu celular em 1 segundo:
-        </p>
-
-        <!-- QR Code Display Container -->
-        <div id="syncQrCodeBox" class="sync-qrcode-box"></div>
-
-        <ul class="sync-guide-steps">
-          <li>
-            <span class="sync-step-badge">1</span>
-            <span>Aponte a câmera do seu celular para este QR Code.</span>
-          </li>
-          <li>
-            <span class="sync-step-badge">2</span>
-            <span>Ou envie o link direto para o seu WhatsApp e abra no celular.</span>
-          </li>
-          <li>
-            <span class="sync-step-badge">3</span>
-            <span>O app abre no celular já com todas as contas sincronizadas!</span>
-          </li>
-        </ul>
-
-        <div style="display:flex; flex-direction:column; gap:10px; margin-top:16px;">
-          <button onclick="app.shareSyncLinkWhatsapp()" class="btn-whatsapp" style="width:100%; font-size:0.92rem; padding:12px;">
-            <i data-lucide="send"></i> Enviar Acesso para Meu WhatsApp
-          </button>
-          <button onclick="app.copySyncLink()" class="btn-secondary" style="width:100%; font-size:0.88rem;">
-            <i data-lucide="copy"></i> Copiar Link de Conexão
-          </button>
-        </div>
-      </div>
-      <div class="modal-footer" style="justify-content:center;">
-        <button onclick="app.closeModal('phoneSyncModal')" class="btn-primary" style="min-width:140px;">Pronto!</button>
-      </div>
+  <!-- App Footer -->
+  <footer class="app-footer">
+    <div class="footer-content">
+      <p>✨ <strong>Desenvolvido por Vivian Bastos</strong> • Controle Financeiro Pessoal</p>
     </div>
-  </div>
-
-  <!-- MODAL: GASTO RÁPIDO DO DIA A DIA (EXPRESS) -->
-  <div id="quickExpenseModal" class="modal-overlay hidden">
-    <div class="modal-card" style="max-width: 460px;">
-      <div class="modal-header">
-        <h2><i data-lucide="zap" style="color:#f59e0b"></i> Lançar Gasto Rápido</h2>
-        <button onclick="app.closeModal('quickExpenseModal')" class="modal-close">&times;</button>
-      </div>
-
-      <form id="quickExpenseForm" onsubmit="app.saveQuickExpense(event)">
-        <div class="modal-body" style="display:flex; flex-direction:column; gap:14px;">
-          <div class="form-group">
-            <label for="quickAmount"><i data-lucide="dollar-sign"></i> Quanto você gastou? (R$) *</label>
-            <input 
-              type="number" 
-              step="0.01" 
-              id="quickAmount" 
-              placeholder="0,00" 
-              required 
-              style="font-size:1.4rem; font-weight:800; text-align:center; padding:12px; color:var(--danger-color);"
-            >
-          </div>
-
-          <div class="form-group">
-            <label for="quickTitle"><i data-lucide="tag"></i> O que foi comprado? *</label>
-            <input 
-              type="text" 
-              id="quickTitle" 
-              placeholder="Ex: Ração do gato, Refrigerante, Gasolina, Padaria" 
-              required
-            >
-          </div>
-
-          <div class="form-group">
-            <label for="quickCategory"><i data-lucide="folder"></i> Categoria:</label>
-            <select id="quickCategory">
-              <option value="Pet / Ração">🐱 Pet / Ração de Animais</option>
-              <option value="Alimentação">🍔 Alimentação / Lanches / Bebidas</option>
-              <option value="Transporte">⛽ Combustível / Uber / Ônibus</option>
-              <option value="Saúde">💊 Farmácia / Remédios</option>
-              <option value="Moradia">🏠 Mercado / Padaria / Feira</option>
-              <option value="Lazer">🎉 Lazer & Diversão</option>
-              <option value="Outros">📌 Outros Gastos</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="quickPaymentMethod"><i data-lucide="credit-card"></i> Como foi pago?</label>
-            <select id="quickPaymentMethod">
-              <option value="Pix">⚡ Pix</option>
-              <option value="Cartão de Débito">💳 Cartão de Débito</option>
-              <option value="Dinheiro">💵 Dinheiro em Espécie</option>
-              <option value="Cartão de Crédito">💳 Cartão de Crédito</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="quickMember"><i data-lucide="user"></i> Quem realizou o gasto?</label>
-            <select id="quickMember">
-              <!-- Dynamically populated -->
-            </select>
-          </div>
-        </div>
-
-        <div class="modal-footer">
-          <button type="button" onclick="app.closeModal('quickExpenseModal')" class="btn-secondary">Cancelar</button>
-          <button type="submit" class="btn-primary" style="background:#f59e0b; border-color:#f59e0b;"><i data-lucide="check"></i> Salvar Gasto Rápido</button>
-        </div>
-      </form>
-    </div>
-  </div>
+  </footer>
 
   <!-- MODAL: ADD / EDIT ACCOUNT -->
   <div id="accountModal" class="modal-overlay hidden">
@@ -869,50 +463,31 @@
       <form id="accountForm" onsubmit="app.saveAccount(event)">
         <input type="hidden" id="accId">
 
-        <!-- Member / Profile Selection -->
-        <div class="form-group col-12" id="memberSelectGroup">
-          <label for="accMember"><i data-lucide="user-check"></i> Pertence a qual Usuário / Membro? *</label>
-          <select id="accMember" required>
-            <!-- Rendered by JS -->
-          </select>
-        </div>
-
-        <!-- Type Selector Tabs: Pagar / Receber -->
         <div class="type-selector">
           <label class="type-btn pay active">
             <input type="radio" name="accType" value="pay" checked onchange="app.toggleTypeUI()">
-            <i data-lucide="arrow-down-circle"></i> Conta a Pagar (Despesa)
+            <i data-lucide="arrow-down-circle"></i> Conta a Pagar
           </label>
           <label class="type-btn receive">
             <input type="radio" name="accType" value="receive" onchange="app.toggleTypeUI()">
-            <i data-lucide="arrow-up-circle"></i> Conta a Receber (Receita / Salário)
+            <i data-lucide="arrow-up-circle"></i> Conta a Receber
           </label>
         </div>
 
-        <!-- Income Quick Presets (Salário, Adiantamento, Renda Extra) -->
-        <div id="incomePresetsRow" class="income-presets-row hidden">
-          <button type="button" class="income-preset-btn" onclick="app.setIncomePreset('Salário / Pagamento Principal', 'Salário / Pagamento')">💼 Salário Principal</button>
-          <button type="button" class="income-preset-btn" onclick="app.setIncomePreset('Adiantamento / Vale Salarial', 'Adiantamento / Vale')">💵 Adiantamento / Vale</button>
-          <button type="button" class="income-preset-btn" onclick="app.setIncomePreset('Renda Extra / Freela', 'Renda Extra / Vendas')">📈 Renda Extra</button>
-        </div>
-
         <div class="form-grid">
-          <!-- Descrição -->
           <div class="form-group col-12">
             <label for="accTitle" id="labelAccTitle">Descrição da Conta / Serviço *</label>
-            <input type="text" id="accTitle" placeholder="Ex: Compra Mercado, Fatura Cartão, Salário" required>
+            <input type="text" id="accTitle" placeholder="Ex: Mercado, Cartão, Conta de Luz" required>
           </div>
 
-          <!-- Pessoa / Favorecido -->
           <div class="form-group col-6">
             <label for="accPerson" id="labelAccPerson">
               <i data-lucide="user"></i> Para quem devo pagar? *
             </label>
-            <input type="text" id="accPerson" list="peopleDatalist" placeholder="Ex: Cartão da Lílian, Cunhado, Mercado" required onchange="app.autoFillPixKey(this.value)">
+            <input type="text" id="accPerson" list="peopleDatalist" placeholder="Ex: Nome da pessoa / Loja" required onchange="app.autoFillPixKey(this.value)">
             <datalist id="peopleDatalist"></datalist>
           </div>
 
-          <!-- Chave Pix -->
           <div class="form-group col-6">
             <label for="accPixKey">
               <i data-lucide="qr-code"></i> Chave Pix da Pessoa
@@ -920,27 +495,32 @@
             <input type="text" id="accPixKey" placeholder="CPF, Celular, E-mail ou Aleatória">
           </div>
 
-          <!-- Valor (R$) -->
           <div class="form-group col-6">
-            <label for="accAmount" id="labelAccAmount">Valor da Conta (R$) *</label>
+            <label for="accAmount" id="labelAccAmount">Valor Total (R$) *</label>
             <input type="number" step="0.01" id="accAmount" placeholder="0,00" required oninput="app.updateInstallmentPreview()">
+            <small class="help-text-highlight" id="amountHelpNote">💡 Digite o <strong>VALOR TOTAL</strong> ou o valor de cada parcela abaixo.</small>
           </div>
 
-          <!-- Data de Vencimento / 1ª Parcela -->
           <div class="form-group col-6">
-            <label for="accDueDate" id="labelAccDueDate">Data do Vencimento *</label>
+            <label for="accDueDate" id="labelAccDueDate">Data de Vencimento *</label>
             <input type="date" id="accDueDate" required>
           </div>
 
-          <!-- Categoria -->
           <div class="form-group col-6">
             <label for="accCategory">Categoria</label>
             <select id="accCategory">
-              <!-- Rendered dynamically according to type -->
+              <option value="Salário/Renda">💰 Salário / Renda / Vendas</option>
+              <option value="Cartão de Terceiros">💳 Cartão de Terceiros / Crédito</option>
+              <option value="Moradia">🏠 Moradia (Aluguel, Luz, Água)</option>
+              <option value="Alimentação">🛒 Alimentação / Mercado</option>
+              <option value="Transporte">🚗 Transporte / Combustível</option>
+              <option value="Saúde">⚕️ Saúde & Farmácia</option>
+              <option value="Lazer">🎉 Lazer & Entretenimento</option>
+              <option value="Educação">📚 Educação & Cursos</option>
+              <option value="Outros">📌 Outros</option>
             </select>
           </div>
 
-          <!-- Status -->
           <div class="form-group col-6">
             <label for="accStatus">Status Inicial</label>
             <select id="accStatus">
@@ -953,26 +533,42 @@
           <div class="form-group col-12 installment-box" id="installmentBox">
             <div class="checkbox-row">
               <input type="checkbox" id="accIsInstallment" onchange="app.toggleInstallmentOptions()">
-              <label for="accIsInstallment" id="labelAccInstallment"><strong>Esta compra é parcelada? (ex: 6x de R$ 50,00)</strong></label>
+              <label for="accIsInstallment" id="labelAccInstallment"><strong>Esta conta foi parcelada? (ex: 3x, 6x)</strong></label>
             </div>
-            <div id="installmentOptions" class="installment-options hidden" style="margin-top:10px;">
-              <div class="form-group">
-                <label for="accInstallmentCount">Quantidade de Vezes / Parcelas:</label>
+            <div id="installmentOptions" class="installment-options hidden">
+              <div class="installment-calc-box">
+                <label class="calc-label">Como deseja informar o valor?</label>
+                <div class="calc-mode-selector">
+                  <label class="calc-mode-option active" id="labelModeTotal">
+                    <input type="radio" name="installmentMode" value="total" checked onchange="app.switchInstallmentMode('total')">
+                    <i data-lucide="calculator"></i>
+                    <div>
+                      <strong>Valor TOTAL da Compra</strong>
+                      <small>Ex: R$ 300,00 em 3x (Parcelas de R$ 100,00)</small>
+                    </div>
+                  </label>
+                  <label class="calc-mode-option" id="labelModeSingle">
+                    <input type="radio" name="installmentMode" value="single" onchange="app.switchInstallmentMode('single')">
+                    <i data-lucide="layers"></i>
+                    <div>
+                      <strong>Valor de CADA PARCELA</strong>
+                      <small>Ex: R$ 100,00 em 3x (Total R$ 300,00)</small>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-top:10px">
+                <label for="accInstallmentCount">Número de Parcelas (x):</label>
                 <input type="number" id="accInstallmentCount" min="2" max="60" value="2" oninput="app.updateInstallmentPreview()">
               </div>
-              
-              <!-- Live Installment Calculation Preview Box -->
-              <div id="installmentLiveSummary" class="installment-summary-pill" style="margin-top:8px; padding:10px; background:var(--bg-secondary); border:1px dashed var(--primary-color); border-radius:8px; font-size:0.88rem; color:var(--text-main);">
-                ⚡ O app vai replicar <strong>2 parcelas</strong> no valor exato de <strong>R$ 0,00</strong> nos próximos 2 meses.
-              </div>
-              <small class="help-text" id="helpAccInstallment">Não precisa calcular o valor total! Apenas coloque o valor de cada parcela e o sistema replica automaticamente nos meses seguintes.</small>
+              <div id="installmentPreview" class="installment-preview-box"></div>
             </div>
           </div>
 
-          <!-- Observações -->
           <div class="form-group col-12">
-            <label for="accNotes">Observações / Detalhes</label>
-            <textarea id="accNotes" rows="2" placeholder="Ex: Detalhes adicionais..."></textarea>
+            <label for="accNotes">Observações</label>
+            <textarea id="accNotes" rows="2" placeholder="Detalhes adicionais..."></textarea>
           </div>
         </div>
 
@@ -984,52 +580,41 @@
     </div>
   </div>
 
-  <!-- MODAL: MANAGE FAMILY MEMBERS / PROFILES -->
-  <div id="membersModal" class="modal-overlay hidden">
+  <!-- MODAL: GASTO RÁPIDO DO DIA A DIA -->
+  <div id="quickExpenseModal" class="modal-overlay hidden">
     <div class="modal-card">
       <div class="modal-header">
-        <h2><i data-lucide="users"></i> Membros e Usuários do CPF</h2>
-        <button onclick="app.closeModal('membersModal')" class="modal-close">&times;</button>
+        <h2><i data-lucide="zap" style="color:#f59e0b"></i> Lançar Gasto Rápido</h2>
+        <button onclick="app.closeModal('quickExpenseModal')" class="modal-close">&times;</button>
       </div>
-      <div class="modal-body">
-        <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:16px;">
-          Cadastre as pessoas da sua casa (ex: Vivian, Esposo, Filho, Vivian PJ) para ter controle individual e consolidado:
-        </p>
-
-        <div class="add-member-form">
-          <input type="text" id="newMemberInput" placeholder="Nome do novo membro (ex: Esposo, Filho)">
-          <button onclick="app.addMemberFromModal()" class="btn-primary"><i data-lucide="plus"></i> Adicionar</button>
+      <form onsubmit="app.saveQuickExpense(event)">
+        <div class="form-group">
+          <label for="quickAmount">Valor Gasto (R$) *</label>
+          <input type="number" step="0.01" id="quickAmount" placeholder="0,00" required style="font-size:1.4rem; font-weight:800; text-align:center; color:var(--danger-color)">
         </div>
-
-        <div id="membersListModal" class="members-list-modal">
-          <!-- Rendered dynamically by JS -->
+        <div class="form-group">
+          <label for="quickTitle">Descrição Rápida *</label>
+          <input type="text" id="quickTitle" placeholder="Ex: Lanche, Combustível, Mercado" required>
         </div>
-      </div>
-      <div class="modal-footer">
-        <button onclick="app.closeModal('membersModal')" class="btn-secondary">Fechar</button>
-      </div>
+        <div class="form-group">
+          <label for="quickCategory">Categoria</label>
+          <select id="quickCategory">
+            <option value="Alimentação">🛒 Alimentação / Mercado</option>
+            <option value="Transporte">🚗 Transporte / Combustível</option>
+            <option value="Lazer">🎉 Lazer / Café</option>
+            <option value="Saúde">⚕️ Saúde & Farmácia</option>
+            <option value="Outros">📌 Outros</option>
+          </select>
+        </div>
+        <div class="modal-footer">
+          <button type="button" onclick="app.closeModal('quickExpenseModal')" class="btn-secondary">Cancelar</button>
+          <button type="submit" class="btn-primary"><i data-lucide="check"></i> Salvar Gasto Rápido</button>
+        </div>
+      </form>
     </div>
   </div>
 
-  <!-- MODAL: WHATSAPP MESSAGE GENERATOR -->
-  <div id="whatsappModal" class="modal-overlay hidden">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h2><i data-lucide="message-square" style="color:#22c55e"></i> Enviar Mensagem no WhatsApp</h2>
-        <button onclick="app.closeModal('whatsappModal')" class="modal-close">&times;</button>
-      </div>
-      <div class="modal-body">
-        <p>Pronto! Geramos um comprovante em texto para você enviar diretamente para o WhatsApp da pessoa:</p>
-        <div class="whatsapp-preview" id="whatsappMessageText"></div>
-      </div>
-      <div class="modal-footer">
-        <button onclick="app.copyWhatsappMessage()" class="btn-secondary"><i data-lucide="copy"></i> Copiar Texto</button>
-        <a id="btnOpenWhatsapp" href="#" target="_blank" class="btn-whatsapp"><i data-lucide="send"></i> Abrir no WhatsApp</a>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: BACKUP & RESTORE & EMERGENCY RECOVERY -->
+  <!-- MODAL: BACKUP & RESTORE -->
   <div id="backupModal" class="modal-overlay hidden">
     <div class="modal-card">
       <div class="modal-header">
@@ -1039,16 +624,16 @@
       <div class="modal-body">
         
         <div class="backup-section" style="background:var(--primary-light); border:1px solid var(--primary-color); padding:16px; border-radius:12px; margin-bottom:16px;">
-          <h3 style="color:var(--primary-color); margin-bottom:4px;">🔍 Varredura de Recuperação Automática</h3>
+          <h3 style="color:var(--primary-color); margin-bottom:4px;">🔍 Varredura de Restauração Automática</h3>
           <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">
-            Clique aqui para fazer uma busca completa na memória do navegador e restaurar quaisquer contas salvas anteriormente.
+            Clique aqui para fazer uma busca completa na memória do aparelho e restaurar quaisquer contas guardadas anteriormente.
           </p>
           <button onclick="app.emergencyScanAndRestore()" class="btn-primary"><i data-lucide="search"></i> Buscar e Restaurar Minhas Contas</button>
         </div>
 
         <div class="backup-section">
           <h3>1. Exportar Dados (Backup)</h3>
-          <p>Baixe uma cópia de segurança de todas as suas contas em formato JSON para salvar no seu celular ou enviar por e-mail.</p>
+          <p>Baixe uma cópia de segurança de todas as suas contas para salvar ou enviar por e-mail.</p>
           <button onclick="app.exportDataJSON()" class="btn-primary"><i data-lucide="download"></i> Baixar Arquivo de Backup</button>
         </div>
 
@@ -1056,225 +641,14 @@
 
         <div class="backup-section">
           <h3>2. Importar Dados (Restaurar)</h3>
-          <p>Carregue um arquivo de backup (.json) feito anteriormente ou vindo de outro celular.</p>
+          <p>Carregue um arquivo de backup (.json) feito anteriormente.</p>
           <input type="file" id="importFileInput" accept=".json" class="hidden" onchange="app.importDataJSON(event)">
           <button onclick="document.getElementById('importFileInput').click()" class="btn-secondary"><i data-lucide="upload"></i> Selecionar Arquivo JSON</button>
         </div>
 
-        <hr class="divider">
-
-        <div class="backup-section highlight-box">
-          <h3>🧹 Zerar Contas de Teste</h3>
-          <p>Apague todas as contas de teste e deixe seu aplicativo zerado e limpo para colocar suas contas verdadeiras.</p>
-          <button onclick="app.clearDemoAccountsPrompt()" class="btn-danger-sm" style="font-size:0.95rem; padding:10px 16px;"><i data-lucide="trash-2"></i> Zerar Contas de Teste</button>
-        </div>
-
       </div>
     </div>
   </div>
-
-  <!-- =========================================================================
-       MOBILE QUICK ACTIONS MODAL (MENU RÁPIDO DO CELULAR)
-       ========================================================================= -->
-  <div id="mobileQuickActionsModal" class="modal-overlay hidden">
-    <div class="modal-card mobile-quick-sheet">
-      <div class="modal-header">
-        <h2><i data-lucide="plus-circle" style="color:var(--primary-color)"></i> O que você deseja lançar?</h2>
-        <button onclick="app.closeModal('mobileQuickActionsModal')" class="modal-close">&times;</button>
-      </div>
-      <div class="modal-body mobile-quick-body">
-        <button class="mobile-quick-btn" onclick="app.closeModal('mobileQuickActionsModal'); app.openNewModal();">
-          <div class="quick-icon-bg pay"><i data-lucide="plus"></i></div>
-          <div class="quick-btn-info">
-            <strong>Cadastrar Conta (Pagar ou Receber)</strong>
-            <small>Boletos, cartões de crédito, parcelamentos e mensalidades</small>
-          </div>
-        </button>
-
-        <button class="mobile-quick-btn" onclick="app.closeModal('mobileQuickActionsModal'); app.openInvoiceImportModal();">
-          <div class="quick-icon-bg pay" style="background:var(--accent-light); color:var(--accent-color)"><i data-lucide="credit-card"></i></div>
-          <div class="quick-btn-info">
-            <strong>Importar Fatura de Cartão</strong>
-            <small>Cole o texto da fatura do banco e lance as parcelas automaticamente</small>
-          </div>
-        </button>
-
-        <button class="mobile-quick-btn" onclick="app.closeModal('mobileQuickActionsModal'); app.openQuickExpenseModal();">
-          <div class="quick-icon-bg expense"><i data-lucide="zap"></i></div>
-          <div class="quick-btn-info">
-            <strong>Gasto Rápido do Dia a Dia</strong>
-            <small>Lanchonete, combustível, mercado ou pequenos gastos em segundos</small>
-          </div>
-        </button>
-
-        <button class="mobile-quick-btn" onclick="app.closeModal('mobileQuickActionsModal'); app.openNewIncomeModal();">
-          <div class="quick-icon-bg income"><i data-lucide="wallet"></i></div>
-          <div class="quick-btn-info">
-            <strong>Lançar Salário ou Receita</strong>
-            <small>Salário do mês, vendas, rendimentos ou entradas extras</small>
-          </div>
-        </button>
-
-        <button class="mobile-quick-btn" onclick="app.closeModal('mobileQuickActionsModal'); app.openPhoneSyncModal();">
-          <div class="quick-icon-bg sync"><i data-lucide="smartphone"></i></div>
-          <div class="quick-btn-info">
-            <strong>Conectar com outro Celular / PC</strong>
-            <small>Sincronizar via QR Code ou WhatsApp</small>
-          </div>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- =========================================================================
-       MOBILE MORE MENU MODAL (MENU MAIS DO CELULAR)
-       ========================================================================= -->
-  <div id="mobileMoreMenuModal" class="modal-overlay hidden">
-    <div class="modal-card mobile-quick-sheet">
-      <div class="modal-header">
-        <h2><i data-lucide="grid" style="color:var(--primary-color)"></i> Menu Completo</h2>
-        <button onclick="app.closeModal('mobileMoreMenuModal')" class="modal-close">&times;</button>
-      </div>
-      <div class="modal-body mobile-more-grid">
-        <button class="mobile-more-item" onclick="app.closeModal('mobileMoreMenuModal'); app.switchTab('income');">
-          <i data-lucide="wallet-cards" style="color:#10b981"></i>
-          <span>Entradas & Salário</span>
-        </button>
-
-        <button class="mobile-more-item" onclick="app.closeModal('mobileMoreMenuModal'); app.switchTab('reports');">
-          <i data-lucide="file-bar-chart" style="color:#3b82f6"></i>
-          <span>Relatórios</span>
-        </button>
-
-        <button class="mobile-more-item" onclick="app.closeModal('mobileMoreMenuModal'); app.switchTab('calendar');">
-          <i data-lucide="calendar" style="color:#8b5cf6"></i>
-          <span>Calendário</span>
-        </button>
-
-        <button class="mobile-more-item" onclick="app.closeModal('mobileMoreMenuModal'); app.switchTab('people');">
-          <i data-lucide="users" style="color:#ec4899"></i>
-          <span>Por Pessoa / Pix</span>
-        </button>
-
-        <button class="mobile-more-item" onclick="app.closeModal('mobileMoreMenuModal'); app.openModal('membersModal');">
-          <i data-lucide="user-plus" style="color:#f59e0b"></i>
-          <span>Gerenciar Perfis</span>
-        </button>
-
-        <button class="mobile-more-item" onclick="app.closeModal('mobileMoreMenuModal'); app.openModal('backupModal');">
-          <i data-lucide="download-cloud" style="color:#06b6d4"></i>
-          <span>Backup & Dados</span>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- =========================================================================
-       FIXED BOTTOM NAVIGATION BAR (FOR MOBILE APP UX)
-       ========================================================================= -->
-  <div class="mobile-bottom-bar">
-    <button class="mobile-nav-item active" data-tab="dashboard" onclick="app.switchTab('dashboard')">
-      <i data-lucide="layout-dashboard"></i>
-      <span>Resumo</span>
-    </button>
-
-    <button class="mobile-nav-item" data-tab="list" onclick="app.switchTab('list')">
-      <i data-lucide="list-todo"></i>
-      <span>Contas</span>
-    </button>
-
-    <button class="mobile-fab-center" onclick="app.openModal('mobileQuickActionsModal')" title="Adicionar / Lançar">
-      <i data-lucide="plus"></i>
-    </button>
-
-    <button class="mobile-nav-item" data-tab="quick-expenses" onclick="app.switchTab('quick-expenses')">
-      <i data-lucide="zap"></i>
-      <span>Gastos</span>
-    </button>
-
-    <button class="mobile-nav-item" onclick="app.openModal('mobileMoreMenuModal')">
-      <i data-lucide="grid"></i>
-      <span>Mais</span>
-    </button>
-  </div>
-
-  <!-- =========================================================================
-       MODAL: IMPORTAR FATURA DE CARTÃO DE CRÉDITO (AUTOMÁTICO)
-       ========================================================================= -->
-  <div id="invoiceImportModal" class="modal-overlay hidden">
-    <div class="modal-card modal-lg">
-      <div class="modal-header">
-        <h2><i data-lucide="credit-card" style="color:var(--primary-color)"></i> Importar Fatura do Cartão</h2>
-        <button onclick="app.closeModal('invoiceImportModal')" class="modal-close">&times;</button>
-      </div>
-
-      <div class="modal-body">
-        <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:14px;">
-          Cole o texto da sua fatura do cartão (Nubank, Itaú, Bradesco, C6, Mercado Pago, Santander, etc.). O aplicativo lê as compras, parcelas e valores automaticamente!
-        </p>
-
-        <div class="form-grid" style="margin-bottom:16px;">
-          <div class="form-group col-6">
-            <label for="invoiceCardName"><i data-lucide="credit-card"></i> Nome do Cartão / Cartão de Terceiros *</label>
-            <input type="text" id="invoiceCardName" placeholder="Ex: Nubank Vivian, Cartão Itaú" required value="Cartão de Crédito">
-          </div>
-
-          <div class="form-group col-6">
-            <label for="invoiceDueDate"><i data-lucide="calendar"></i> Vencimento da Fatura *</label>
-            <input type="date" id="invoiceDueDate" required>
-          </div>
-        </div>
-
-        <div class="form-group" style="margin-bottom:16px;">
-          <label for="invoiceTextRaw"><i data-lucide="file-text"></i> Cole o Texto da Fatura aqui:</label>
-          <textarea id="invoiceTextRaw" rows="5" placeholder="Exemplo de texto da fatura que você pode colar aqui:
-15/08 MERCADO LIVRE R$ 120,00 (03/10)
-20/08 UBER TRIP R$ 24,90
-22/08 MAGAZINE LUIZA R$ 150,00 2x" oninput="app.parseInvoicePreview()"></textarea>
-          <small class="help-text">Dica: Você pode copiar o texto da fatura direto do aplicativo do seu banco, e-mail ou PDF e colar acima!</small>
-        </div>
-
-        <!-- Detected Items Table Preview -->
-        <div id="invoicePreviewArea" class="hidden">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
-            <h3 style="font-size:0.92rem; color:var(--primary-color);"><i data-lucide="check-circle-2"></i> Itens Encontrados na Fatura:</h3>
-            <span id="invoiceTotalPreview" class="badge-tag badge-person" style="font-size:0.85rem">Total: R$ 0,00</span>
-          </div>
-
-          <div class="report-table-wrapper" style="max-height:220px; overflow-y:auto; margin-bottom:14px; border:1px solid var(--border-color); border-radius:10px;">
-            <table class="report-table" id="invoiceItemsTable">
-              <thead>
-                <tr>
-                  <th style="width:30px;"><input type="checkbox" id="checkAllInvoiceItems" checked onchange="app.toggleAllInvoiceItems(this.checked)"></th>
-                  <th>Compra / Estabelecimento</th>
-                  <th>Parcela</th>
-                  <th>Valor</th>
-                </tr>
-              </thead>
-              <tbody id="invoiceItemsTbody">
-                <!-- Dynamically generated items -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-      </div>
-
-      <div class="modal-footer">
-        <button type="button" onclick="app.closeModal('invoiceImportModal')" class="btn-secondary">Cancelar</button>
-        <button type="button" id="btnConfirmInvoiceImport" class="btn-primary" onclick="app.confirmInvoiceImport()" disabled>
-          <i data-lucide="check"></i> Lançar Fatura no Aplicativo
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Footer -->
-  <footer class="app-footer">
-    <div class="footer-content">
-      <span>© 2026 Minhas Contas • Sistema Seguro de Gestão Financeira Pessoal & Familiar</span>
-    </div>
-  </footer>
 
   <!-- JS Code -->
   <script src="app.js"></script>
