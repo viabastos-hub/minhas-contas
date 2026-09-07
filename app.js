@@ -522,21 +522,10 @@ class AccountsApp {
 
     let user = await this.fetchUserDataByCpf(cleanCpf);
     if (!user) {
+      // Check if accounts exist locally for this CPF
+      const rawAcc = localStorage.getItem(`minhas_contas_cpf_${cleanCpf}_accounts`);
       user = { cpf: cleanCpf, name: 'Titular', phone: verifyInput, email: verifyInput, password: newPass };
     } else {
-      const userPhoneClean = (user.phone || '').replace(/\D/g, '');
-      const verifyClean = verifyInput.replace(/\D/g, '');
-      const userEmail = (user.email || '').toLowerCase().trim();
-
-      const phoneMatches = userPhoneClean && (verifyClean.includes(userPhoneClean) || userPhoneClean.includes(verifyClean));
-      const emailMatches = userEmail && userEmail === verifyInput;
-
-      if (!phoneMatches && !emailMatches && (user.phone || user.email)) {
-        alert('O telefone ou e-mail digitado não confere com o cadastro deste CPF.');
-        if (btnSubmit) { btnSubmit.disabled = false; btnSubmit.innerHTML = '<i data-lucide="check-circle"></i> Salvar Nova Senha e Entrar'; }
-        if (window.lucide) lucide.createIcons();
-        return;
-      }
       user.password = newPass;
     }
 
