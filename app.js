@@ -369,15 +369,30 @@ class AccountsApp {
      5. BULLETPROOF AUTH & LOGIN
      ------------------------------------------------------------------------ */
   async checkCpfAuth() {
-    const savedCpf = localStorage.getItem(this.AUTH_CPF_KEY);
+    let savedCpf = localStorage.getItem(this.AUTH_CPF_KEY);
+
+    // Auto-discover saved CPF on this device if not explicitly set
+    if (!savedCpf) {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('minhas_contas_cpf_') && key.endsWith('_accounts')) {
+          savedCpf = key.replace('minhas_contas_cpf_', '').replace('_accounts', '');
+          localStorage.setItem(this.AUTH_CPF_KEY, savedCpf);
+          break;
+        }
+      }
+    }
+
     const overlay = document.getElementById('authOverlay');
 
     if (savedCpf) {
-      const user = await this.fetchUserDataByCpf(savedCpf);
-      if (user) {
-        this.loginSuccess(user, false);
-        return;
+      let user = await this.fetchUserDataByCpf(savedCpf);
+      if (!user) {
+        user = { cpf: savedCpf, name: 'Titular', phone: '', email: '', password: '' };
+        this.saveLocalUserData(user);
       }
+      this.loginSuccess(user, true);
+      return;
     }
 
     if (overlay) overlay.classList.remove('hidden');
@@ -893,14 +908,34 @@ class AccountsApp {
 
     // Accounts
     const rawAccounts = localStorage.getItem(this.getCpfStorageKey('accounts'));
-    if (rawAccounts !== null) {
+    if (rawAccounts !== null && rawAccounts !== '[]') {
       try { 
         this.accounts = JSON.parse(rawAccounts); 
       } catch(e) { 
         this.accounts = []; 
       }
     } else {
-      this.accounts = this.getSampleData();
+      // Memory Scan & Auto-Recovery of any accounts saved on this device
+      let recovered = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('minhas_contas_')) {
+          try {
+            const val = localStorage.getItem(key);
+            if (!val) continue;
+            const parsed = JSON.parse(val);
+            if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].title && parsed[0].amount !== undefined) {
+              parsed.forEach(acc => {
+                if (!recovered.some(x => x.id === acc.id || (x.title === acc.title && x.dueDate === acc.dueDate && x.amount === acc.amount))) {
+                  recovered.push(acc);
+                }
+              });
+            }
+          } catch (e) {}
+        }
+      }
+
+      this.accounts = recovered;
       this.saveCpfAccounts();
     }
 
