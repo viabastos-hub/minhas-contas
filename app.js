@@ -1218,6 +1218,9 @@ class AccountsApp {
     document.querySelectorAll('.nav-tab').forEach(tab => {
       tab.classList.toggle('active', tab.getAttribute('data-tab') === tabId);
     });
+    document.querySelectorAll('.mobile-nav-item').forEach(tab => {
+      tab.classList.toggle('active', tab.getAttribute('data-tab') === tabId);
+    });
     document.querySelectorAll('.tab-content').forEach(content => {
       content.classList.toggle('active', content.id === `tab-${tabId}`);
     });
@@ -1249,6 +1252,7 @@ class AccountsApp {
     this.populateCategorySelect();
 
     if (this.currentTab === 'dashboard') {
+      this.renderDailyMotivation();
       this.renderDashboard();
     } else if (this.currentTab === 'income') {
       this.renderIncomeTab();
@@ -2622,6 +2626,194 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
+     SMART CREDIT CARD INVOICE PARSER
+     ------------------------------------------------------------------------ */
+  openInvoiceImportModal() {
+    const cardInput = document.getElementById('invoiceCardName');
+    if (cardInput && !cardInput.value) cardInput.value = 'Cartão de Crédito';
+
+    const dateInput = document.getElementById('invoiceDueDate');
+    if (dateInput) {
+      const today = new Date();
+      const defaultDate = new Date(today.getFullYear(), today.getMonth(), 10);
+      dateInput.value = defaultDate.toISOString().split('T')[0];
+    }
+
+    const textRaw = document.getElementById('invoiceTextRaw');
+    if (textRaw) textRaw.value = '';
+
+    const previewArea = document.getElementById('invoicePreviewArea');
+    if (previewArea) previewArea.classList.add('hidden');
+
+    const btnSubmit = document.getElementById('btnConfirmInvoiceImport');
+    if (btnSubmit) btnSubmit.disabled = true;
+
+    this.parsedInvoiceItems = [];
+    this.openModal('invoiceImportModal');
+  }
+
+  parseInvoicePreview() {
+    const rawText = document.getElementById('invoiceTextRaw')?.value || '';
+    const previewArea = document.getElementById('invoicePreviewArea');
+    const tbody = document.getElementById('invoiceItemsTbody');
+    const totalPreview = document.getElementById('invoiceTotalPreview');
+    const btnSubmit = document.getElementById('btnConfirmInvoiceImport');
+
+    if (!rawText.trim()) {
+      if (previewArea) previewArea.classList.add('hidden');
+      if (btnSubmit) btnSubmit.disabled = true;
+      this.parsedInvoiceItems = [];
+      return;
+    }
+
+    const lines = rawText.split('\n');
+    const items = [];
+
+    lines.forEach((line, index) => {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.length < 3) return;
+
+      let amount = 0;
+      const amountMatch = trimmed.match(/(?:R\$\s*)?(\d{1,3}(?:\.\d{3})*,\d{2}|\d+,\d{2}|\d+\.\d{2})/i);
+      if (amountMatch) {
+        let cleanVal = amountMatch[1].replace(/\./g, '').replace(',', '.');
+        amount = parseFloat(cleanVal) || 0;
+      }
+
+      if (amount <= 0) return;
+
+      let installmentStr = 'À vista / 1x';
+      const instMatch = trimmed.match(/(\d{1,2})\s*[\/\-deDE\s]+\s*(\d{1,2})|(\d{1,2})\s*[xX]/);
+      if (instMatch) {
+        if (instMatch[1] && instMatch[2]) {
+          installmentStr = `Parcela ${instMatch[1]} de ${instMatch[2]}`;
+        } else if (instMatch[3]) {
+          installmentStr = `${instMatch[3]}x`;
+        }
+      }
+
+      let title = trimmed
+        .replace(/(?:R\$\s*)?(\d{1,3}(?:\.\d{3})*,\d{2}|\d+,\d{2}|\d+\.\d{2})/g, '')
+        .replace(/(\d{1,2})\s*[\/\-deDE\s]+\s*(\d{1,2})|(\d{1,2})\s*[xX]/g, '')
+        .replace(/\b\d{2}\/\d{2}(?:\/\d{2,4})?\b/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      if (!title) title = `Compra de Cartão ${index + 1}`;
+
+      items.push({
+        id: 'inv_' + index + '_' + Date.now(),
+        title: title,
+        installment: installmentStr,
+        amount: amount,
+        checked: true
+      });
+    });
+
+    this.parsedInvoiceItems = items;
+
+    if (items.length === 0) {
+      if (previewArea) previewArea.classList.add('hidden');
+      if (btnSubmit) btnSubmit.disabled = true;
+      return;
+    }
+
+    let sum = 0;
+    tbody.innerHTML = items.map((item, idx) => {
+      if (item.checked) sum += item.amount;
+      return `
+        <tr>
+          <td><input type="checkbox" ${item.checked ? 'checked' : ''} onchange="app.toggleInvoiceItem(${idx}, this.checked)"></td>
+          <td><strong>${this.escapeHtml(item.title)}</strong></td>
+          <td><span class="badge-tag">${this.escapeHtml(item.installment)}</span></td>
+          <td style="font-weight:700; color:var(--danger-color)">${this.formatCurrency(item.amount)}</td>
+        </tr>
+      `;
+    }).join('');
+
+    if (totalPreview) totalPreview.textContent = `Total Selecionado: ${this.formatCurrency(sum)}`;
+    if (previewArea) previewArea.classList.remove('hidden');
+    if (btnSubmit) btnSubmit.disabled = (items.filter(i => i.checked).length === 0);
+
+    if (window.lucide) lucide.createIcons();
+  }
+
+  toggleInvoiceItem(index, isChecked) {
+    if (this.parsedInvoiceItems && this.parsedInvoiceItems[index]) {
+      this.parsedInvoiceItems[index].checked = isChecked;
+    }
+    this.updateInvoiceSummary();
+  }
+
+  toggleAllInvoiceItems(isChecked) {
+    if (this.parsedInvoiceItems) {
+      this.parsedInvoiceItems.forEach(i => i.checked = isChecked);
+    }
+    const checkboxes = document.querySelectorAll('#invoiceItemsTbody input[type="checkbox"]');
+    checkboxes.forEach(cb => cb.checked = isChecked);
+    this.updateInvoiceSummary();
+  }
+
+  updateInvoiceSummary() {
+    const totalPreview = document.getElementById('invoiceTotalPreview');
+    const btnSubmit = document.getElementById('btnConfirmInvoiceImport');
+    let sum = 0;
+    let selectedCount = 0;
+
+    if (this.parsedInvoiceItems) {
+      this.parsedInvoiceItems.forEach(item => {
+        if (item.checked) {
+          sum += item.amount;
+          selectedCount++;
+        }
+      });
+    }
+
+    if (totalPreview) totalPreview.textContent = `Total Selecionado: ${this.formatCurrency(sum)}`;
+    if (btnSubmit) btnSubmit.disabled = (selectedCount === 0);
+  }
+
+  confirmInvoiceImport() {
+    const cardName = document.getElementById('invoiceCardName')?.value.trim() || 'Cartão de Crédito';
+    const dueDate = document.getElementById('invoiceDueDate')?.value || new Date().toISOString().split('T')[0];
+    const profileId = this.getActiveProfileId();
+
+    if (!this.parsedInvoiceItems || this.parsedInvoiceItems.length === 0) return;
+
+    const selectedItems = this.parsedInvoiceItems.filter(i => i.checked);
+    if (selectedItems.length === 0) return;
+
+    let addedCount = 0;
+    selectedItems.forEach(item => {
+      const fullTitle = `${item.title} (${item.installment})`;
+      this.accounts.push({
+        id: 'acc_inv_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        profileId: profileId,
+        title: fullTitle,
+        person: cardName,
+        pixKey: '',
+        amount: item.amount,
+        dueDate: dueDate,
+        category: 'Cartão de Terceiros',
+        status: 'pending',
+        notes: `Importado da Fatura de Cartão (${cardName})`,
+        type: 'pay'
+      });
+      addedCount++;
+    });
+
+    this.saveCpfAccounts();
+    this.closeModal('invoiceImportModal');
+    this.render();
+
+    if (window.confetti) {
+      confetti({ particleCount: 50, spread: 60, origin: { y: 0.85 } });
+    }
+
+    this.showToast(`🎉 ${addedCount} parcela(s)/item(ns) da fatura do ${cardName} lançados com sucesso!`);
+  }
+
+  /* ------------------------------------------------------------------------
      21. UTILS & TOASTS
      ------------------------------------------------------------------------ */
   openModal(modalId) {
@@ -2663,6 +2855,96 @@ class AccountsApp {
     toast.textContent = msg;
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 3000);
+  /* ------------------------------------------------------------------------
+     DAILY MOTIVATION & EXTRA INCOME TIP SYSTEM
+     ------------------------------------------------------------------------ */
+  initDailyMotivation() {
+    this.motivationQuotes = [
+      "\"Hoje é um novo dia e o seu sucesso depende de você! Você consegue. Defina novas metas. Você é livre, tem valor e é 100% capaz de criar novas fontes de renda! 🌟\"",
+      "\"As coisas podem não estar fáceis hoje, mas vão melhorar! Cada pequeno passo que você dá aproxima você da sua liberdade financeira. Acredite em você! 💪\"",
+      "\"Você tem um potencial gigante que dinheiro nenhum compra. Use seus talentos hoje para transformar a sua realidade! ✨\"",
+      "\"Não olhe para o tamanho da montanha, olhe para o primeiro passo. Você é forte, capaz e vai vencer essa fase! 🚀\"",
+      "\"Sua mente é sua maior fábrica de ideias. Acredite na sua capacidade de gerar riqueza e mudar sua vida! 💛\""
+    ];
+
+    this.extraIncomeTips = [
+      "Que tal vender algo que você tem parado em casa no OLX, Enjoei ou Mercado Livre? Fazer um 'desapego' pode te gerar R$ 100 a R$ 500 nesta semana!",
+      "Que tal criar um canal no YouTube ou TikTok compartilhando uma dica ou habilidade que você domina? Muitas pessoas geram renda extra compartilhando conhecimento!",
+      "Que tal fazer doces, salgados ou marmitas congeladas para vender no seu bairro ou grupos de WhatsApp da vizinhança?",
+      "Que tal oferecer serviços simples no seu tempo livre (aulas, consultoria, artesanato, digitação) no Workana ou 99Freelas?",
+      "Que tal criar um guia prático ou e-book simples no Canva sobre algo que você sabe fazer bem e colocar para vender na Kiwify/Hotmart?",
+      "Que tal oferecer serviço de passear com pets, cuidar de plantas ou pequenos reparos para vizinhos?"
+    ];
+
+    this.currentTipIdx = 0;
+  }
+
+  renderDailyMotivation() {
+    if (!this.motivationQuotes) this.initDailyMotivation();
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const dismissedDay = localStorage.getItem('minhas_contas_dismissed_motivation');
+    const card = document.getElementById('dailyMotivationCard');
+
+    if (card) {
+      if (dismissedDay === todayStr) {
+        card.classList.add('hidden');
+        return;
+      } else {
+        card.classList.remove('hidden');
+      }
+    }
+
+    const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
+    const quoteIdx = dayOfYear % this.motivationQuotes.length;
+    
+    const quoteEl = document.getElementById('dailyMotivationQuote');
+    if (quoteEl) quoteEl.textContent = this.motivationQuotes[quoteIdx];
+
+    this.updateDailyTipDisplay();
+  }
+
+  nextDailyMotivationTip() {
+    if (!this.extraIncomeTips) this.initDailyMotivation();
+    this.currentTipIdx = (this.currentTipIdx + 1) % this.extraIncomeTips.length;
+    this.updateDailyTipDisplay();
+  }
+
+  updateDailyTipDisplay() {
+    if (!this.extraIncomeTips) this.initDailyMotivation();
+    const tipEl = document.getElementById('dailyTipText');
+    if (tipEl) tipEl.textContent = this.extraIncomeTips[this.currentTipIdx];
+  }
+
+  dismissDailyMotivation() {
+    const todayStr = new Date().toISOString().split('T')[0];
+    localStorage.setItem('minhas_contas_dismissed_motivation', todayStr);
+    document.getElementById('dailyMotivationCard')?.classList.add('hidden');
+  }
+
+  async requestMobileNotificationPermission() {
+    if (!('Notification' in window)) {
+      alert('Seu navegador ou celular não suporta notificações nativas.');
+      return;
+    }
+
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        this.showToast('🔔 Notificações diárias ativadas com sucesso!');
+        if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
+          const reg = await navigator.serviceWorker.ready;
+          reg.showNotification('Minhas Contas 🌟', {
+            body: 'Hoje é um novo dia! O seu sucesso depende de você. Você é capaz e tem valor! 💚',
+            icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">💰</text></svg>'
+          });
+        }
+      } else {
+        alert('As notificações foram bloqueadas nas configurações do seu navegador.');
+      }
+    } catch (e) {
+      console.log('Notification permission error:', e);
+    }
   }
 }
 

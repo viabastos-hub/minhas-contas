@@ -360,6 +360,38 @@
 
     <!-- TAB 1: DASHBOARD -->
     <section id="tab-dashboard" class="tab-content active">
+      
+      <!-- DAILY MOTIVATION & EXTRA INCOME TIP CARD -->
+      <div id="dailyMotivationCard" class="motivation-card">
+        <div class="motivation-header">
+          <div class="motivation-badge">
+            <i data-lucide="sparkles"></i> MOTIVAÇÃO & RENDA EXTRA DO DIA
+          </div>
+          <button onclick="app.dismissDailyMotivation()" class="btn-dismiss-motivation" title="Fechar por hoje">&times;</button>
+        </div>
+
+        <div class="motivation-quote" id="dailyMotivationQuote">
+          "Hoje é um novo dia e o seu sucesso depende de você. Você consegue! Defina novas metas. Você é livre, tem valor e é 100% capaz de criar novas fontes de renda!"
+        </div>
+
+        <div class="motivation-tip-box" id="dailyExtraIncomeTip">
+          <i data-lucide="lightbulb" style="color:var(--warning-color); flex-shrink:0;"></i>
+          <div>
+            <strong>💡 Dica de Virada Financeira:</strong>
+            <p id="dailyTipText">Que tal vender algo que você tem parado em casa no OLX ou Mercado Livre para fazer um dinheiro rápido hoje?</p>
+          </div>
+        </div>
+
+        <div class="motivation-footer">
+          <button onclick="app.requestMobileNotificationPermission()" class="btn-notify-daily">
+            <i data-lucide="bell"></i> Receber Frase Diária no Celular
+          </button>
+          <button onclick="app.nextDailyMotivationTip()" class="btn-next-tip">
+            <i data-lucide="rotate-cw"></i> Ver Outra Dica
+          </button>
+        </div>
+      </div>
+
       <!-- Filter Bar Header -->
       <div class="filter-bar">
         <div class="month-selector">
@@ -1037,6 +1069,202 @@
           <button onclick="app.clearDemoAccountsPrompt()" class="btn-danger-sm" style="font-size:0.95rem; padding:10px 16px;"><i data-lucide="trash-2"></i> Zerar Contas de Teste</button>
         </div>
 
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MOBILE QUICK ACTIONS MODAL (MENU RÁPIDO DO CELULAR)
+       ========================================================================= -->
+  <div id="mobileQuickActionsModal" class="modal-overlay hidden">
+    <div class="modal-card mobile-quick-sheet">
+      <div class="modal-header">
+        <h2><i data-lucide="plus-circle" style="color:var(--primary-color)"></i> O que você deseja lançar?</h2>
+        <button onclick="app.closeModal('mobileQuickActionsModal')" class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body mobile-quick-body">
+        <button class="mobile-quick-btn" onclick="app.closeModal('mobileQuickActionsModal'); app.openNewModal();">
+          <div class="quick-icon-bg pay"><i data-lucide="plus"></i></div>
+          <div class="quick-btn-info">
+            <strong>Cadastrar Conta (Pagar ou Receber)</strong>
+            <small>Boletos, cartões de crédito, parcelamentos e mensalidades</small>
+          </div>
+        </button>
+
+        <button class="mobile-quick-btn" onclick="app.closeModal('mobileQuickActionsModal'); app.openInvoiceImportModal();">
+          <div class="quick-icon-bg pay" style="background:var(--accent-light); color:var(--accent-color)"><i data-lucide="credit-card"></i></div>
+          <div class="quick-btn-info">
+            <strong>Importar Fatura de Cartão</strong>
+            <small>Cole o texto da fatura do banco e lance as parcelas automaticamente</small>
+          </div>
+        </button>
+
+        <button class="mobile-quick-btn" onclick="app.closeModal('mobileQuickActionsModal'); app.openQuickExpenseModal();">
+          <div class="quick-icon-bg expense"><i data-lucide="zap"></i></div>
+          <div class="quick-btn-info">
+            <strong>Gasto Rápido do Dia a Dia</strong>
+            <small>Lanchonete, combustível, mercado ou pequenos gastos em segundos</small>
+          </div>
+        </button>
+
+        <button class="mobile-quick-btn" onclick="app.closeModal('mobileQuickActionsModal'); app.openNewIncomeModal();">
+          <div class="quick-icon-bg income"><i data-lucide="wallet"></i></div>
+          <div class="quick-btn-info">
+            <strong>Lançar Salário ou Receita</strong>
+            <small>Salário do mês, vendas, rendimentos ou entradas extras</small>
+          </div>
+        </button>
+
+        <button class="mobile-quick-btn" onclick="app.closeModal('mobileQuickActionsModal'); app.openPhoneSyncModal();">
+          <div class="quick-icon-bg sync"><i data-lucide="smartphone"></i></div>
+          <div class="quick-btn-info">
+            <strong>Conectar com outro Celular / PC</strong>
+            <small>Sincronizar via QR Code ou WhatsApp</small>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MOBILE MORE MENU MODAL (MENU MAIS DO CELULAR)
+       ========================================================================= -->
+  <div id="mobileMoreMenuModal" class="modal-overlay hidden">
+    <div class="modal-card mobile-quick-sheet">
+      <div class="modal-header">
+        <h2><i data-lucide="grid" style="color:var(--primary-color)"></i> Menu Completo</h2>
+        <button onclick="app.closeModal('mobileMoreMenuModal')" class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body mobile-more-grid">
+        <button class="mobile-more-item" onclick="app.closeModal('mobileMoreMenuModal'); app.switchTab('income');">
+          <i data-lucide="wallet-cards" style="color:#10b981"></i>
+          <span>Entradas & Salário</span>
+        </button>
+
+        <button class="mobile-more-item" onclick="app.closeModal('mobileMoreMenuModal'); app.switchTab('reports');">
+          <i data-lucide="file-bar-chart" style="color:#3b82f6"></i>
+          <span>Relatórios</span>
+        </button>
+
+        <button class="mobile-more-item" onclick="app.closeModal('mobileMoreMenuModal'); app.switchTab('calendar');">
+          <i data-lucide="calendar" style="color:#8b5cf6"></i>
+          <span>Calendário</span>
+        </button>
+
+        <button class="mobile-more-item" onclick="app.closeModal('mobileMoreMenuModal'); app.switchTab('people');">
+          <i data-lucide="users" style="color:#ec4899"></i>
+          <span>Por Pessoa / Pix</span>
+        </button>
+
+        <button class="mobile-more-item" onclick="app.closeModal('mobileMoreMenuModal'); app.openModal('membersModal');">
+          <i data-lucide="user-plus" style="color:#f59e0b"></i>
+          <span>Gerenciar Perfis</span>
+        </button>
+
+        <button class="mobile-more-item" onclick="app.closeModal('mobileMoreMenuModal'); app.openModal('backupModal');">
+          <i data-lucide="download-cloud" style="color:#06b6d4"></i>
+          <span>Backup & Dados</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       FIXED BOTTOM NAVIGATION BAR (FOR MOBILE APP UX)
+       ========================================================================= -->
+  <div class="mobile-bottom-bar">
+    <button class="mobile-nav-item active" data-tab="dashboard" onclick="app.switchTab('dashboard')">
+      <i data-lucide="layout-dashboard"></i>
+      <span>Resumo</span>
+    </button>
+
+    <button class="mobile-nav-item" data-tab="list" onclick="app.switchTab('list')">
+      <i data-lucide="list-todo"></i>
+      <span>Contas</span>
+    </button>
+
+    <button class="mobile-fab-center" onclick="app.openModal('mobileQuickActionsModal')" title="Adicionar / Lançar">
+      <i data-lucide="plus"></i>
+    </button>
+
+    <button class="mobile-nav-item" data-tab="quick-expenses" onclick="app.switchTab('quick-expenses')">
+      <i data-lucide="zap"></i>
+      <span>Gastos</span>
+    </button>
+
+    <button class="mobile-nav-item" onclick="app.openModal('mobileMoreMenuModal')">
+      <i data-lucide="grid"></i>
+      <span>Mais</span>
+    </button>
+  </div>
+
+  <!-- =========================================================================
+       MODAL: IMPORTAR FATURA DE CARTÃO DE CRÉDITO (AUTOMÁTICO)
+       ========================================================================= -->
+  <div id="invoiceImportModal" class="modal-overlay hidden">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <h2><i data-lucide="credit-card" style="color:var(--primary-color)"></i> Importar Fatura do Cartão</h2>
+        <button onclick="app.closeModal('invoiceImportModal')" class="modal-close">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:14px;">
+          Cole o texto da sua fatura do cartão (Nubank, Itaú, Bradesco, C6, Mercado Pago, Santander, etc.). O aplicativo lê as compras, parcelas e valores automaticamente!
+        </p>
+
+        <div class="form-grid" style="margin-bottom:16px;">
+          <div class="form-group col-6">
+            <label for="invoiceCardName"><i data-lucide="credit-card"></i> Nome do Cartão / Cartão de Terceiros *</label>
+            <input type="text" id="invoiceCardName" placeholder="Ex: Nubank Vivian, Cartão Itaú" required value="Cartão de Crédito">
+          </div>
+
+          <div class="form-group col-6">
+            <label for="invoiceDueDate"><i data-lucide="calendar"></i> Vencimento da Fatura *</label>
+            <input type="date" id="invoiceDueDate" required>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:16px;">
+          <label for="invoiceTextRaw"><i data-lucide="file-text"></i> Cole o Texto da Fatura aqui:</label>
+          <textarea id="invoiceTextRaw" rows="5" placeholder="Exemplo de texto da fatura que você pode colar aqui:
+15/08 MERCADO LIVRE R$ 120,00 (03/10)
+20/08 UBER TRIP R$ 24,90
+22/08 MAGAZINE LUIZA R$ 150,00 2x" oninput="app.parseInvoicePreview()"></textarea>
+          <small class="help-text">Dica: Você pode copiar o texto da fatura direto do aplicativo do seu banco, e-mail ou PDF e colar acima!</small>
+        </div>
+
+        <!-- Detected Items Table Preview -->
+        <div id="invoicePreviewArea" class="hidden">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+            <h3 style="font-size:0.92rem; color:var(--primary-color);"><i data-lucide="check-circle-2"></i> Itens Encontrados na Fatura:</h3>
+            <span id="invoiceTotalPreview" class="badge-tag badge-person" style="font-size:0.85rem">Total: R$ 0,00</span>
+          </div>
+
+          <div class="report-table-wrapper" style="max-height:220px; overflow-y:auto; margin-bottom:14px; border:1px solid var(--border-color); border-radius:10px;">
+            <table class="report-table" id="invoiceItemsTable">
+              <thead>
+                <tr>
+                  <th style="width:30px;"><input type="checkbox" id="checkAllInvoiceItems" checked onchange="app.toggleAllInvoiceItems(this.checked)"></th>
+                  <th>Compra / Estabelecimento</th>
+                  <th>Parcela</th>
+                  <th>Valor</th>
+                </tr>
+              </thead>
+              <tbody id="invoiceItemsTbody">
+                <!-- Dynamically generated items -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" onclick="app.closeModal('invoiceImportModal')" class="btn-secondary">Cancelar</button>
+        <button type="button" id="btnConfirmInvoiceImport" class="btn-primary" onclick="app.confirmInvoiceImport()" disabled>
+          <i data-lucide="check"></i> Lançar Fatura no Aplicativo
+        </button>
       </div>
     </div>
   </div>

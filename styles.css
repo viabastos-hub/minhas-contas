@@ -2209,4 +2209,486 @@ button, input, select, textarea {
   .box-val.balance { color: #2563eb !important; }
 }
 
+/* ==========================================================================
+   CLEAN MOBILE LAYOUT & BOTTOM NAVIGATION SYSTEM
+   ========================================================================== */
+
+.mobile-bottom-bar {
+  display: none;
+}
+
+.mobile-quick-sheet {
+  max-width: 480px;
+  border-radius: 24px 24px 0 0;
+  margin-top: auto;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.mobile-quick-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px 24px;
+}
+
+.mobile-quick-btn {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  text-align: left;
+  transition: var(--transition);
+  width: 100%;
+}
+
+.mobile-quick-btn:hover, .mobile-quick-btn:active {
+  background: var(--bg-card-hover);
+  border-color: var(--primary-color);
+}
+
+.quick-icon-bg {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.quick-icon-bg.pay { background: var(--primary-light); color: var(--primary-color); }
+.quick-icon-bg.expense { background: var(--warning-light); color: var(--warning-color); }
+.quick-icon-bg.income { background: var(--info-light); color: var(--info-color); }
+.quick-icon-bg.sync { background: var(--accent-light); color: var(--accent-color); }
+
+.quick-btn-info strong {
+  display: block;
+  font-size: 0.95rem;
+  color: var(--text-main);
+  margin-bottom: 2px;
+}
+
+.quick-btn-info small {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.mobile-more-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding: 16px 20px 24px;
+}
+
+.mobile-more-item {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.mobile-more-item i {
+  font-size: 1.4rem;
+}
+
+.mobile-more-item span {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-main);
+  text-align: center;
+}
+
+/* Mobile Screen Clean Adjustments (<= 768px) */
+@media (max-width: 768px) {
+  body {
+    padding-bottom: 90px;
+  }
+
+  .nav-tabs {
+    display: none !important; /* Replaced by clean Mobile Bottom Bar! */
+  }
+
+  .header-actions .btn-connect-phone,
+  .header-actions .btn-add-income-quick,
+  .header-actions .btn-quick-expense,
+  .header-actions .btn-add {
+    display: none !important; /* Hide crowded buttons, handled by FAB & Quick Sheets! */
+  }
+
+  .app-header {
+    padding: 10px 14px;
+  }
+
+  .header-container {
+    gap: 8px;
+  }
+
+  .brand h1 {
+    font-size: 1.15rem;
+  }
+
+  .cpf-badge, .sync-status-badge {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+  }
+
+  .profile-switcher select {
+    max-width: 110px;
+    font-size: 0.78rem;
+  }
+
+  .btn-add-profile {
+    padding: 2px 6px;
+    font-size: 0.72rem;
+  }
+
+  /* Fixed Bottom Navigation Bar */
+  .mobile-bottom-bar {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100vw;
+    height: 64px;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
+    z-index: 1000;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0 8px;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.3);
+    backdrop-filter: blur(12px);
+  }
+
+  .mobile-nav-item {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    flex: 1;
+    height: 100%;
+    cursor: pointer;
+  }
+
+  .mobile-nav-item i {
+    width: 20px;
+    height: 20px;
+  }
+
+  .mobile-nav-item.active {
+    color: var(--primary-color);
+  }
+
+  .mobile-fab-center {
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+    color: #ffffff;
+    border: 3px solid var(--bg-secondary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    margin-top: -24px;
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.45);
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .mobile-fab-center:active {
+    transform: scale(0.92);
+  }
+
+  /* Clean KPI Grid on Mobile */
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .kpi-card {
+    padding: 12px;
+  }
+
+  .kpi-label {
+    font-size: 0.75rem;
+  }
+
+  .kpi-value {
+    font-size: 1.25rem;
+  }
+
+  .kpi-subtext {
+    font-size: 0.7rem;
+  }
+
+  .filter-bar {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .month-title {
+    font-size: 0.95rem;
+    min-width: 100px;
+  }
+
+  .budget-goal-card {
+    padding: 12px 14px;
+  }
+
+  .budget-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .account-card {
+    padding: 12px;
+    gap: 10px;
+  }
+}
+
+/* ==========================================================================
+   DAILY MOTIVATION & EXTRA INCOME CARD STYLES
+   ========================================================================== */
+.motivation-card {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(59, 130, 246, 0.12));
+  border: 1px solid var(--primary-color);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  position: relative;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  animation: fadeIn 0.4s ease;
+}
+
+.motivation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.motivation-badge {
+  background: var(--primary-color);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  letter-spacing: 0.5px;
+}
+
+.btn-dismiss-motivation {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.motivation-quote {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.45;
+  margin-bottom: 12px;
+  font-style: italic;
+}
+
+.motivation-tip-box {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.motivation-tip-box strong {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--warning-color);
+  margin-bottom: 2px;
+}
+
+.motivation-tip-box p {
+  font-size: 0.85rem;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.motivation-footer {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-notify-daily {
+  background: var(--primary-light);
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: var(--transition);
+}
+
+.btn-notify-daily:hover {
+  background: var(--primary-color);
+  color: #ffffff;
+}
+
+.btn-next-tip {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Hide Vercel Toolbar & Injected Badges */
+#vercel-toolbar,
+[data-vercel-toolbar],
+.vercel-toolbar,
+div[id*="vercel-toolbar"],
+iframe[src*="vercel"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* ==========================================================================
+   ELEGANT LEFT SIDEBAR MENU FOR DESKTOP & TABLET
+   ========================================================================== */
+@media (min-width: 769px) {
+  body {
+    display: block;
+    min-height: 100vh;
+  }
+
+  .nav-tabs {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 240px;
+    height: 100vh;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    padding: 20px 12px;
+    z-index: 100;
+    box-shadow: 2px 0 12px rgba(0,0,0,0.15);
+    overflow-y: auto;
+    border-bottom: none;
+  }
+
+  .nav-tabs::before {
+    content: "💰 Minhas Contas";
+    font-family: var(--font-heading);
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--primary-color);
+    padding: 10px 14px 18px 14px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 14px;
+    display: block;
+  }
+
+  .nav-tab {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.92rem;
+    text-decoration: none;
+    transition: var(--transition);
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+    margin-bottom: 4px;
+  }
+
+  .nav-tab i {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+
+  .nav-tab:hover {
+    background: var(--bg-primary);
+    color: var(--text-main);
+  }
+
+  .nav-tab.active {
+    background: var(--primary-light);
+    color: var(--primary-color);
+    font-weight: 700;
+    border-left: 4px solid var(--primary-color);
+  }
+
+  .app-header {
+    margin-left: 240px;
+    width: calc(100% - 240px);
+  }
+
+  .main-container {
+    margin-left: 240px;
+    width: calc(100% - 240px);
+    max-width: none;
+    padding: 24px 32px;
+  }
+
+  .app-footer {
+    margin-left: 240px;
+    width: calc(100% - 240px);
+  }
+}
+
 
