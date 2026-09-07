@@ -43,34 +43,29 @@ class AccountsApp {
   /* ------------------------------------------------------------------------
      1. BULLETPROOF CPF LOGIN & STORAGE ISOLATION
      ------------------------------------------------------------------------ */
+  /* ------------------------------------------------------------------------
+     1. BULLETPROOF CPF LOGIN & STRICT DATA ISOLATION PER CPF
+     ------------------------------------------------------------------------ */
   checkCpfAuth() {
-    let savedCpf = localStorage.getItem(this.AUTH_CPF_KEY);
-
-    // Auto-discover saved CPF on this device if not set
-    if (!savedCpf) {
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('minhas_contas_cpf_') && key.endsWith('_accounts')) {
-          savedCpf = key.replace('minhas_contas_cpf_', '').replace('_accounts', '');
-          break;
-        }
-      }
-    }
-
+    const savedCpf = localStorage.getItem(this.AUTH_CPF_KEY);
     const overlay = document.getElementById('authOverlay');
 
     if (savedCpf && savedCpf.length === 11) {
       this.activeCpf = savedCpf;
       if (overlay) overlay.classList.add('hidden');
       
+      const formatted = this.formatCpf(savedCpf);
       const badgeText = document.getElementById('currentCpfText');
-      if (badgeText) badgeText.textContent = this.formatCpf(savedCpf);
+      if (badgeText) badgeText.textContent = formatted;
+      const sidebarCpf = document.getElementById('sidebarCpfText');
+      if (sidebarCpf) sidebarCpf.textContent = `CPF: ${formatted}`;
 
       this.loadCpfData();
       this.render();
       return;
     }
 
+    // Require explicit CPF input - zero auto-picking of other CPFs
     if (overlay) overlay.classList.remove('hidden');
   }
 
@@ -78,21 +73,11 @@ class AccountsApp {
     if (e && typeof e.preventDefault === 'function') e.preventDefault();
 
     const cpfInput = document.getElementById('loginCpfInput')?.value.trim() || '';
-    let cleanCpf = cpfInput.replace(/\D/g, '');
-
-    // Fallback: search for existing CPF on device if empty
-    if (cleanCpf.length !== 11) {
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('minhas_contas_cpf_') && key.endsWith('_accounts')) {
-          cleanCpf = key.replace('minhas_contas_cpf_', '').replace('_accounts', '');
-          break;
-        }
-      }
-    }
+    const cleanCpf = cpfInput.replace(/\D/g, '');
 
     if (cleanCpf.length !== 11) {
-      cleanCpf = '00000000000'; // Default fallback CPF to ensure instant entry
+      alert('Por favor, digite um CPF válido com 11 números.');
+      return;
     }
 
     this.activeCpf = cleanCpf;
@@ -101,8 +86,11 @@ class AccountsApp {
     const overlay = document.getElementById('authOverlay');
     if (overlay) overlay.classList.add('hidden');
 
+    const formatted = this.formatCpf(cleanCpf);
     const badgeText = document.getElementById('currentCpfText');
-    if (badgeText) badgeText.textContent = this.formatCpf(cleanCpf);
+    if (badgeText) badgeText.textContent = formatted;
+    const sidebarCpf = document.getElementById('sidebarCpfText');
+    if (sidebarCpf) sidebarCpf.textContent = `CPF: ${formatted}`;
 
     this.loadCpfData();
     this.render();
@@ -110,11 +98,12 @@ class AccountsApp {
   }
 
   logoutCpf() {
-    if (confirm('Deseja desconectar deste CPF e trocar de usuário?')) {
+    if (confirm('Deseja sair e desconectar deste CPF?')) {
       localStorage.removeItem(this.AUTH_CPF_KEY);
       this.activeCpf = null;
       this.accounts = [];
       this.profiles = [];
+      this.activeProfileId = 'all';
       const overlay = document.getElementById('authOverlay');
       if (overlay) overlay.classList.remove('hidden');
     }
@@ -127,7 +116,7 @@ class AccountsApp {
   loadCpfData() {
     if (!this.activeCpf) return;
 
-    // Profiles
+    // Profiles for THIS SPECIFIC CPF ONLY
     const rawProfiles = localStorage.getItem(this.getCpfStorageKey('profiles'));
     if (rawProfiles !== null) {
       try { this.profiles = JSON.parse(rawProfiles); } catch(e) { this.profiles = []; }
@@ -139,37 +128,27 @@ class AccountsApp {
       this.saveCpfProfiles();
     }
 
-    // Active Profile
+    // Active Profile for THIS SPECIFIC CPF ONLY
     const savedActiveProfile = localStorage.getItem(this.getCpfStorageKey('active_profile'));
     this.activeProfileId = savedActiveProfile || 'all';
 
-    // Accounts Loading & Auto-Recovery Scan
+    // Accounts Loading for THIS SPECIFIC CPF ONLY (Zero leakage from other CPFs)
     const rawAccounts = localStorage.getItem(this.getCpfStorageKey('accounts'));
-    if (rawAccounts !== null && rawAccounts !== '[]') {
+    if (rawAccounts !== null) {
       try {
         this.accounts = JSON.parse(rawAccounts);
       } catch(e) {
         this.accounts = [];
       }
     } else {
-      // Memory Scan & Auto-Recovery of any accounts saved on this device
+      // Check ONLY unassigned legacy accounts key, NEVER another CPF's key!
       let recovered = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('minhas_contas_')) {
-          try {
-            const val = localStorage.getItem(key);
-            if (!val) continue;
-            const parsed = JSON.parse(val);
-            if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].title && parsed[0].amount !== undefined) {
-              parsed.forEach(acc => {
-                if (!recovered.some(x => x.id === acc.id || (x.title === acc.title && x.dueDate === acc.dueDate && x.amount === acc.amount))) {
-                  recovered.push(acc);
-                }
-              });
-            }
-          } catch (e) {}
-        }
+      const legacyRaw = localStorage.getItem('minhas_contas_saved_accounts') || localStorage.getItem('minhas_contas_accounts_v1');
+      if (legacyRaw) {
+        try {
+          const parsed = JSON.parse(legacyRaw);
+          if (Array.isArray(parsed)) recovered = parsed;
+        } catch (e) {}
       }
 
       this.accounts = recovered;
@@ -357,17 +336,45 @@ class AccountsApp {
   }
 
   /* ------------------------------------------------------------------------
-     5. NAVIGATION & RENDER PIPELINE
+     5. NAVIGATION & SIDEBAR DRAWER MENU
      ------------------------------------------------------------------------ */
+  toggleSidebarMenu() {
+    const sidebar = document.getElementById('sidebarMenu');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (sidebar && overlay) {
+      const isOpen = sidebar.classList.contains('open');
+      if (isOpen) {
+        this.closeSidebarMenu();
+      } else {
+        sidebar.classList.add('open');
+        overlay.classList.remove('hidden');
+      }
+    }
+  }
+
+  closeSidebarMenu() {
+    const sidebar = document.getElementById('sidebarMenu');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (sidebar) sidebar.classList.remove('open');
+    if (overlay) overlay.classList.add('hidden');
+  }
+
   switchTab(tabId) {
     this.currentTab = tabId;
-    document.querySelectorAll('.nav-tab').forEach(tab => {
-      tab.classList.toggle('active', tab.getAttribute('data-tab') === tabId);
+
+    // Update active class for both top nav tabs and sidebar drawer items
+    document.querySelectorAll('.nav-tab, .sidebar-item').forEach(tab => {
+      const target = tab.getAttribute('data-tab');
+      if (target) {
+        tab.classList.toggle('active', target === tabId);
+      }
     });
+
     document.querySelectorAll('.tab-content').forEach(content => {
       content.classList.toggle('active', content.id === `tab-${tabId}`);
     });
 
+    this.closeSidebarMenu();
     this.render();
   }
 
@@ -1297,17 +1304,22 @@ class AccountsApp {
      13. BACKUP & EMERGENCY RECOVERY SCAN
      ------------------------------------------------------------------------ */
   emergencyScanAndRestore() {
+    if (!this.activeCpf) return;
     let recovered = [];
 
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith('minhas_contas_')) {
-        try {
-          const val = localStorage.getItem(key);
-          if (!val) continue;
+    // Scan ONLY current CPF's storage key or unassigned legacy storage
+    const targetKeys = [
+      this.getCpfStorageKey('accounts'),
+      'minhas_contas_saved_accounts',
+      'minhas_contas_accounts_v1'
+    ];
 
+    targetKeys.forEach(key => {
+      const val = localStorage.getItem(key);
+      if (val) {
+        try {
           const parsed = JSON.parse(val);
-          if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].title && parsed[0].amount !== undefined) {
+          if (Array.isArray(parsed) && parsed.length > 0) {
             parsed.forEach(acc => {
               if (!recovered.some(x => x.id === acc.id || (x.title === acc.title && x.dueDate === acc.dueDate && x.amount === acc.amount))) {
                 recovered.push(acc);
@@ -1316,7 +1328,7 @@ class AccountsApp {
           }
         } catch (e) {}
       }
-    }
+    });
 
     if (recovered.length > 0) {
       this.accounts = recovered;
@@ -1324,9 +1336,9 @@ class AccountsApp {
       this.render();
       this.closeModal('backupModal');
       if (window.confetti) confetti({ particleCount: 60, spread: 60 });
-      alert(`🎉 Sucesso! Encontramos e restauramos ${recovered.length} conta(s) guardadas na memória!`);
+      alert(`🎉 Sucesso! Restauramos ${recovered.length} conta(s) exclusivas do seu CPF!`);
     } else {
-      alert('Nenhuma conta anterior foi encontrada na memória deste navegador.');
+      alert('Nenhuma conta anterior foi encontrada para este CPF.');
     }
   }
 

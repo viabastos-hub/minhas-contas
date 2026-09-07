@@ -88,10 +88,75 @@
     </div>
   </div>
 
+  <!-- SIDEBAR DRAWER OVERLAY (MENU LATERAL ESQUERDO) -->
+  <div id="sidebarOverlay" class="sidebar-overlay hidden" onclick="app.closeSidebarMenu()"></div>
+  <aside id="sidebarMenu" class="sidebar-drawer">
+    <div class="sidebar-header">
+      <div class="brand">
+        <div class="brand-logo"><i data-lucide="wallet"></i></div>
+        <h2 style="font-size:1.15rem; font-weight:800; font-family:var(--font-heading)">Minhas Contas</h2>
+      </div>
+      <button onclick="app.closeSidebarMenu()" class="btn-close-sidebar" title="Fechar Menu">&times;</button>
+    </div>
+
+    <div class="sidebar-cpf-box">
+      <i data-lucide="fingerprint" style="color:var(--primary-color)"></i>
+      <span id="sidebarCpfText">CPF: 000.000.000-00</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button class="sidebar-item active" data-tab="dashboard" onclick="app.switchTab('dashboard')">
+        <i data-lucide="layout-dashboard"></i> <span>Resumo Geral</span>
+      </button>
+      <button class="sidebar-item" data-tab="income" onclick="app.switchTab('income')">
+        <i data-lucide="wallet-cards" style="color:#10b981"></i> <span>Entradas & Salário</span>
+      </button>
+      <button class="sidebar-item" data-tab="list" onclick="app.switchTab('list')">
+        <i data-lucide="list-todo"></i> <span>Todas as Contas</span>
+      </button>
+      <button class="sidebar-item" data-tab="quick-expenses" onclick="app.switchTab('quick-expenses')">
+        <i data-lucide="zap" style="color:#f59e0b"></i> <span>Gastos Rápidos</span>
+      </button>
+      <button class="sidebar-item" data-tab="calendar" onclick="app.switchTab('calendar')">
+        <i data-lucide="calendar"></i> <span>Calendário</span>
+      </button>
+      <button class="sidebar-item" data-tab="people" onclick="app.switchTab('people')">
+        <i data-lucide="users"></i> <span>Por Pessoa / Pix</span>
+      </button>
+
+      <div class="sidebar-divider"></div>
+
+      <button class="sidebar-item" onclick="app.openNewModal()">
+        <i data-lucide="plus-circle" style="color:#10b981"></i> <span>Cadastrar Nova Conta</span>
+      </button>
+      <button class="sidebar-item" onclick="app.openQuickExpenseModal()">
+        <i data-lucide="zap" style="color:#f59e0b"></i> <span>Lançar Gasto Rápido</span>
+      </button>
+      <button class="sidebar-item" onclick="app.openModal('backupModal')">
+        <i data-lucide="download-cloud"></i> <span>Backup & Dados</span>
+      </button>
+      <button class="sidebar-item" onclick="app.toggleTheme()">
+        <i data-lucide="sun"></i> <span>Alternar Tema</span>
+      </button>
+      <button class="sidebar-item" onclick="app.logoutCpf()" style="color:var(--danger-color)">
+        <i data-lucide="log-out"></i> <span>Sair / Trocar CPF</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <span>© 2026 Minhas Contas • Desenvolvido por VPB</span>
+    </div>
+  </aside>
+
   <!-- App Header -->
   <header class="app-header">
     <div class="header-container">
       <div class="brand">
+        <!-- Hamburger Menu Button -->
+        <button class="btn-menu-hamburger" onclick="app.toggleSidebarMenu()" title="Abrir Menu Lateral">
+          <i data-lucide="menu"></i>
+        </button>
+
         <div class="brand-logo">
           <i data-lucide="wallet"></i>
         </div>
@@ -142,7 +207,7 @@
     </div>
   </header>
 
-  <!-- Navigation Tabs -->
+  <!-- Navigation Tabs (Barra Superior Responsiva / Atalhos) -->
   <nav class="nav-tabs">
     <button class="nav-tab active" data-tab="dashboard" onclick="app.switchTab('dashboard')">
       <i data-lucide="layout-dashboard"></i>
@@ -176,31 +241,25 @@
     <!-- TAB 1: DASHBOARD -->
     <section id="tab-dashboard" class="tab-content active">
       
-      <!-- DAILY MOTIVATION & EXTRA INCOME TIP CARD -->
-      <div id="dailyMotivationCard" class="motivation-card">
-        <div class="motivation-header">
+      <!-- DAILY MOTIVATION & EXTRA INCOME TIP CARD (COMPACT & ELEGANT) -->
+      <div id="dailyMotivationCard" class="motivation-card-compact">
+        <div class="motivation-compact-header">
           <div class="motivation-badge">
-            <i data-lucide="sparkles"></i> MOTIVAÇÃO & RENDA EXTRA DO DIA
+            <i data-lucide="sparkles"></i> MOTIVAÇÃO & RENDA EXTRA
           </div>
-          <button onclick="app.dismissDailyMotivation()" class="btn-dismiss-motivation" title="Fechar por hoje">&times;</button>
-        </div>
-
-        <div class="motivation-quote" id="dailyMotivationQuote">
-          "Hoje é um novo dia e o seu sucesso depende de você. Você consegue! Defina novas metas. Você é livre, tem valor e é 100% capaz de criar novas fontes de renda!"
-        </div>
-
-        <div class="motivation-tip-box" id="dailyExtraIncomeTip">
-          <i data-lucide="lightbulb" style="color:var(--warning-color); flex-shrink:0;"></i>
-          <div>
-            <strong>💡 Dica de Virada Financeira:</strong>
-            <p id="dailyTipText">Que tal vender algo que você tem parado em casa no OLX ou Mercado Livre para fazer um dinheiro rápido hoje?</p>
+          <div class="motivation-actions">
+            <button onclick="app.nextDailyMotivationTip()" class="btn-icon-tiny" title="Ver outra dica"><i data-lucide="rotate-cw"></i></button>
+            <button onclick="app.dismissDailyMotivation()" class="btn-dismiss-motivation" title="Fechar por hoje">&times;</button>
           </div>
         </div>
 
-        <div class="motivation-footer">
-          <button onclick="app.nextDailyMotivationTip()" class="btn-next-tip">
-            <i data-lucide="rotate-cw"></i> Ver Outra Dica
-          </button>
+        <p class="motivation-quote-text" id="dailyMotivationQuote">
+          "Hoje é um novo dia e o seu sucesso depende de você. Você consegue! Defina novas metas. Você é livre, tem valor e é capaz de criar novas fontes de renda!"
+        </p>
+
+        <div class="motivation-tip-mini" id="dailyExtraIncomeTip">
+          <i data-lucide="lightbulb" style="color:var(--warning-color); flex-shrink:0; width:14px; height:14px;"></i>
+          <span id="dailyTipText">Que tal vender algo que você tem parado em casa para fazer dinheiro rápido?</span>
         </div>
       </div>
 
@@ -445,10 +504,15 @@
 
   </main>
 
+  <!-- Mobile Floating Action Button (⚡ Gasto Rápido na palma da mão) -->
+  <button class="mobile-fab-btn" onclick="app.openQuickExpenseModal()" title="Lançar Gasto Rápido">
+    <i data-lucide="zap"></i>
+  </button>
+
   <!-- App Footer -->
   <footer class="app-footer">
     <div class="footer-content">
-      <p>✨ <strong>Desenvolvido por Vivian Bastos</strong> • Controle Financeiro Pessoal</p>
+      <p>© 2026 Minhas Contas • Desenvolvido por VPB</p>
     </div>
   </footer>
 
