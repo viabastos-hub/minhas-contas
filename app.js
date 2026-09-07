@@ -377,26 +377,26 @@ class AccountsApp {
         const key = localStorage.key(i);
         if (key && key.startsWith('minhas_contas_cpf_') && key.endsWith('_accounts')) {
           savedCpf = key.replace('minhas_contas_cpf_', '').replace('_accounts', '');
-          localStorage.setItem(this.AUTH_CPF_KEY, savedCpf);
           break;
         }
       }
     }
 
-    const overlay = document.getElementById('authOverlay');
-
-    if (savedCpf) {
-      let user = await this.fetchUserDataByCpf(savedCpf);
-      if (!user) {
-        user = { cpf: savedCpf, name: 'Titular', phone: '', email: '', password: '' };
-        this.saveLocalUserData(user);
-      }
-      this.loginSuccess(user, true);
-      return;
+    if (!savedCpf) {
+      savedCpf = '00000000000';
     }
 
-    if (overlay) overlay.classList.remove('hidden');
-    this.showLoginView();
+    localStorage.setItem(this.AUTH_CPF_KEY, savedCpf);
+
+    const overlay = document.getElementById('authOverlay');
+    if (overlay) overlay.classList.add('hidden');
+
+    let user = await this.fetchUserDataByCpf(savedCpf);
+    if (!user) {
+      user = { cpf: savedCpf, name: 'Titular', phone: '', email: '', password: '' };
+      this.saveLocalUserData(user);
+    }
+    this.loginSuccess(user, true);
   }
 
   saveLocalUserData(user) {
